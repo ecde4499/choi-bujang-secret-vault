@@ -33,9 +33,9 @@
 </head>
 <body>
   <main>
-    <div class="eyebrow">BYTE BACK · 4단계 내 자료만</div>
+    <div class="eyebrow">BYTE BACK · 5단계 서버 한곳으로</div>
     <h1>로그인 자료실</h1>
-    <p>로그인 후에도 서버가 검증한 사용자 ID와 메모 owner_id가 일치하는 자료만 보여 줍니다.</p>
+    <p>로그인과 메모 자료 요청을 모두 같은 사이트의 서버 함수로 보내고, 브라우저에는 데이터 서비스 키를 두지 않습니다.</p>
 
     <section id="signed-out" class="panel">
       <h2>로그인</h2>
@@ -52,11 +52,11 @@
         <strong id="session-label">로그인됨</strong>
         <button id="logout" class="secondary" type="button">로그아웃</button>
       </div>
-      <p>API 요청마다 Supabase 세션의 access token을 Authorization 헤더로 전달합니다.</p>
+      <p>로그인 토큰은 HttpOnly 세션 쿠키로 서버 함수에 전달되며 화면 코드에서 읽지 않습니다.</p>
     </section>
 
     <section id="vault" hidden>
-      <div class="notice">4단계에서는 로그인뿐 아니라 메모 소유자도 확인합니다. 목록·조회·수정·삭제는 본인 owner_id와 일치하는 메모만 허용합니다.</div>
+      <div class="notice">5단계에서도 4단계 소유자 검사를 유지합니다. 목록·조회·수정·삭제는 본인 메모만 허용됩니다.</div>
 
       <section class="panel">
         <h2>메모 추가</h2>
@@ -74,14 +74,6 @@
   </main>
 
   <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/+esm';
-
-    const SUPABASE_URL = 'https://fwkwsmcfbosrnqzsvyxk.supabase.co';
-    const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_EDCiIwEwmIvf8C_827sonA_HzQ8om4U';
-    const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
-    });
-
     const signedOut = document.querySelector('#signed-out');
     const signedIn = document.querySelector('#signed-in');
     const vault = document.querySelector('#vault');
@@ -92,29 +84,38 @@
     const createForm = document.querySelector('#create-form');
     const noteStatus = document.querySelector('#note-status');
     const notes = document.querySelector('#notes');
-    let currentSession = null;
+    let loggedIn = false;
 
-    function renderSession(session) {
-      currentSession = session;
-      const loggedIn = Boolean(session?.access_token);
-      signedOut.hidden = loggedIn;
-      signedIn.hidden = !loggedIn;
-      vault.hidden = !loggedIn;
-      sessionLabel.textContent = loggedIn ? `로그인됨: ${session.user?.email ?? '사용자'}` : '로그인 필요';
-      if (!loggedIn) notes.replaceChildren();
+    function renderSession(isLoggedIn) {
+      loggedIn = isLoggedIn;
+      signedOut.hidden = isLoggedIn;
+      signedIn.hidden = !isLoggedIn;
+      vault.hidden = !isLoggedIn;
+      sessionLabel.textContent = isLoggedIn ? '로그인됨' : '로그인 필요';
+      if (!isLoggedIn) notes.replaceChildren();
+    }
+
+    async function jsonRequest(path, options = {}) {
+      const headers = new Headers(options.headers ?? {});
+      if (options.body !== undefined) headers.set('Content-Type', 'application/json');
+      const response = await fetch(path, {
+        ...options,
+        headers,
+        credentials: 'same-origin',
+        cache: 'no-store',
+      });
+      if (response.status === 204) return null;
+      let body = null;
+      try { body = await response.json(); } catch { /* JSON이 아니면 아래 상태 코드로 처리 */ }
+      if (!response.ok) {
+        throw new Error(body?.message ?? body?.error ?? `요청 실패 (HTTP ${response.status})`);
+      }
+      return body;
     }
 
     async function api(path, options = {}) {
-      if (!currentSession?.access_token) throw new Error('로그인이 필요합니다.');
-      const headers = new Headers(options.headers ?? {});
-      headers.set('Authorization', `Bearer ${currentSession.access_token}`);
-      if (options.body !== undefined) headers.set('Content-Type', 'application/json');
-      const response = await fetch(path, { ...options, headers, cache: 'no-store' });
-      if (response.status === 204) return null;
-      let body = null;
-      try { body = await response.json(); } catch { /* 오류 응답에 JSON이 없을 수 있음 */ }
-      if (!response.ok) throw new Error(body?.error ?? `요청 실패 (HTTP ${response.status})`);
-      return body;
+      if (!loggedIn) throw new Error('로그인이 필요합니다.');
+      return jsonRequest(path, options);
     }
 
     function noteItem(note) {
@@ -166,9 +167,13 @@
         const data = await api('/api/notes');
         if (!Array.isArray(data)) throw new Error('자료 형식이 맞지 않습니다.');
         notes.replaceChildren(...data.map(noteItem));
-        if (!data.length) notes.append(Object.assign(document.createElement('li'), { textContent: '메모가 없습니다.' }));
+        if (!data.length) {
+          notes.append(Object.assign(document.createElement('li'), { textContent: '메모가 없습니다.' }));
+        }
       } catch (error) {
-        notes.replaceChildren(Object.assign(document.createElement('li'), { textContent: `자료 조회 실패: ${error.message}` }));
+        notes.replaceChildren(Object.assign(document.createElement('li'), {
+          textContent: `자료 조회 실패: ${error.message}`,
+        }));
       }
     }
 
@@ -177,24 +182,29 @@
       loginStatus.textContent = '로그인 중입니다.';
       const email = document.querySelector('#email').value;
       const password = document.querySelector('#password').value;
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
+      try {
+        await jsonRequest('/api/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ email, password }),
+        });
+        loginForm.reset();
+        loginStatus.textContent = '';
+        renderSession(true);
+        await loadNotes();
+      } catch (error) {
+        renderSession(false);
         loginStatus.textContent = `로그인 실패: ${error.message}`;
-        return;
       }
-      loginStatus.textContent = '';
-      renderSession(data.session);
-      await loadNotes();
     });
 
     logoutButton.addEventListener('click', async () => {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
+      try {
+        await jsonRequest('/api/auth/logout', { method: 'POST' });
+        renderSession(false);
+        loginStatus.textContent = '로그아웃했습니다.';
+      } catch (error) {
         noteStatus.textContent = `로그아웃 실패: ${error.message}`;
-        return;
       }
-      renderSession(null);
-      loginStatus.textContent = '로그아웃했습니다.';
     });
 
     createForm.addEventListener('submit', async event => {
@@ -209,14 +219,13 @@
       } catch (error) { noteStatus.textContent = `추가 실패: ${error.message}`; }
     });
 
-    const { data: initial } = await supabase.auth.getSession();
-    renderSession(initial.session);
-    if (initial.session) await loadNotes();
-
-    supabase.auth.onAuthStateChange((event, session) => {
-      renderSession(session);
-      if (event === 'SIGNED_IN' && session) queueMicrotask(() => loadNotes());
-    });
+    try {
+      await jsonRequest('/api/auth/session');
+      renderSession(true);
+      await loadNotes();
+    } catch {
+      renderSession(false);
+    }
   </script>
 </body>
 </html>

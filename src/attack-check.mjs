@@ -168,5 +168,66 @@ export async function runAttackChecks(config) {
     ];
   }
 
+  if (config.step === 5) {
+    const rootResponse = await fetch(app, {
+      redirect: 'error', signal: AbortSignal.timeout(10000),
+    });
+    const rootText = await rootResponse.text();
+    const nosniff = rootResponse.headers.get('x-content-type-options')?.toLowerCase() === 'nosniff';
+    const publicKeyAbsent = !/sb_publishable_[A-Za-z0-9_-]+/u.test(rootText)
+      && !/SUPABASE_PUBLISHABLE_KEY/u.test(rootText);
+
+    const alephResponse = await fetch(new URL('/aleph.json', app), {
+      redirect: 'error', signal: AbortSignal.timeout(10000),
+    });
+    let alephRoutesVisible = false;
+    if (alephResponse.ok) {
+      try {
+        const data = await alephResponse.json();
+        alephRoutesVisible = data?.step === 5
+          && Array.isArray(data?.allowedRoutes)
+          && data.allowedRoutes.length > 0
+          && data?.originalApiUrl === config.originalApiUrl;
+      } catch {
+        // Non-JSON deployment identity is not a successful check.
+      }
+    }
+
+    const listResponse = await fetch(new URL('/api/notes', app), {
+      redirect: 'error', signal: AbortSignal.timeout(10000),
+    });
+    let listJsonError = false;
+    try {
+      const body = await listResponse.json();
+      listJsonError = (listResponse.status === 401 || listResponse.status === 403)
+        && typeof body?.error === 'string' && body.error.length > 0;
+    } catch {
+      // HTML or empty response is not the required JSON denial.
+    }
+
+    let originalStatus = '미실행';
+    try {
+      const originalResponse = await fetch(config.originalApiUrl, {
+        redirect: 'error', signal: AbortSignal.timeout(10000),
+      });
+      originalStatus = `HTTP ${originalResponse.status}`;
+    } catch (error) {
+      originalStatus = `요청 실패: ${error.name ?? 'Error'}`;
+    }
+
+    return [
+      { attackId: 'anonymous_note_list_denied_json', expected: '비로그인 서버 함수 요청은 401/403 JSON 오류로 거부',
+        observed: listJsonError ? `비로그인 목록 요청이 JSON 오류로 거부됨 (HTTP ${listResponse.status})` : `비로그인 목록 거부 형식 불일치 (HTTP ${listResponse.status})` },
+      { attackId: 'deployment_routes_visible', expected: '/aleph.json에 5단계 allowedRoutes와 originalApiUrl 존재',
+        observed: alephRoutesVisible ? '5단계 allowedRoutes와 originalApiUrl 확인됨' : `aleph.json 확인 실패 (HTTP ${alephResponse.status})` },
+      { attackId: 'security_header_present', expected: '첫 화면에 X-Content-Type-Options nosniff 존재',
+        observed: nosniff ? '첫 화면 nosniff 헤더 확인됨' : `첫 화면 nosniff 헤더 없음 (HTTP ${rootResponse.status})` },
+      { attackId: 'browser_public_key_absent', expected: '첫 화면 코드에 Supabase publishable key 문자열이 없음',
+        observed: publicKeyAbsent ? '첫 화면에서 publishable key 문자열이 보이지 않음' : '첫 화면에서 publishable key 문자열이 발견됨' },
+      { attackId: 'original_api_without_key', expected: '원본 자료 경로를 키 없이 호출한 실제 결과 기록',
+        observed: `원본 자료 경로 직접 요청 ${originalStatus}; anon 키 검사는 심판 확인 대상` },
+    ];
+  }
+
   throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
 }

@@ -5,6 +5,25 @@ import { createLoginVerifier } from '../../src/verify-login.mjs';
 const config = JSON.parse(readFileSync(new URL('../../aleph.config.json', import.meta.url), 'utf8'));
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
 
+const COOKIE = '__Host-bb_session';
+
+function requestAuthorization(request) {
+  if (typeof request.headers?.authorization === 'string' && request.headers.authorization.trim()) {
+    return request.headers.authorization;
+  }
+  const raw = request.headers?.cookie;
+  if (typeof raw !== 'string') return undefined;
+  for (const part of raw.split(';')) {
+    const [name, ...rest] = part.trim().split('=');
+    if (name !== COOKIE) continue;
+    const encoded = rest.join('=');
+    let token = encoded;
+    try { token = decodeURIComponent(encoded); } catch { /* keep raw cookie value */ }
+    return token ? `Bearer ${token}` : undefined;
+  }
+  return undefined;
+}
+
 function serverTools() {
   const url = process.env.SUPABASE_URL;
   const secretKey = process.env.SUPABASE_SECRET_KEY;
@@ -44,7 +63,7 @@ export default async function handler(request, response) {
   try { tools = serverTools(); } catch { tools = null; }
   if (!tools) return response.status(500).json({ error: 'SERVER_CONFIGURATION_MISSING' });
 
-  const principal = await tools.verifyLogin(request.headers?.authorization);
+  const principal = await tools.verifyLogin(requestAuthorization(request));
   if (!principal) return response.status(401).json({ error: 'UNAUTHORIZED' });
 
   if (request.method === 'GET') {
