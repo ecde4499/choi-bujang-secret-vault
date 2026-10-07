@@ -5,8 +5,8 @@ import { deploymentIdentity } from './deployment-identity.mjs';
 const root = resolve(import.meta.dirname, '..');
 const config = JSON.parse(await readFile(resolve(root, 'aleph.config.json'), 'utf8'));
 
-if (![1, 2].includes(config.step)) {
-  throw new Error('현재 시작 틀 빌드는 1~2단계까지만 지원합니다.');
+if (![1, 2, 3].includes(config.step)) {
+  throw new Error('현재 시작 틀 빌드는 1~3단계까지만 지원합니다.');
 }
 
 await mkdir(resolve(root, 'public'), { recursive: true });
@@ -22,7 +22,7 @@ if (config.step === 1) {
   console.log('1단계 실습용 공개 자료를 public/data.json에 기록했습니다.');
 } else {
   await writeFile(resolve(root, 'public', 'data.json'), '{\n  "notes": []\n}\n', 'utf8');
-  console.log('2단계에서는 public/data.json에 메모 본문을 두지 않습니다.');
+  console.log(`${config.step}단계에서는 public/data.json에 메모 본문을 두지 않습니다.`);
 }
 
 if (!process.argv.includes('--local')) {

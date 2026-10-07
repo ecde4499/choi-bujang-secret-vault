@@ -66,5 +66,43 @@ export async function runAttackChecks(config) {
     ];
   }
 
+  if (config.step === 3) {
+    const staticResponse = await fetch(new URL('/data.json', app), {
+      redirect: 'error', signal: AbortSignal.timeout(10000),
+    });
+    let staticEmpty = false;
+    if (staticResponse.ok) {
+      try {
+        const data = await staticResponse.json();
+        staticEmpty = Array.isArray(data.notes) && data.notes.length === 0;
+      } catch {
+        // The expected empty JSON file was not verified.
+      }
+    }
+
+    const listResponse = await fetch(new URL('/api/notes', app), {
+      redirect: 'error', signal: AbortSignal.timeout(10000),
+    });
+    const createResponse = await fetch(new URL('/api/notes', app), {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ title: 'unauthorized-check', body: 'must-not-be-created' }),
+      redirect: 'error', signal: AbortSignal.timeout(10000),
+    });
+    const itemResponse = await fetch(new URL('/api/notes/00000000-0000-4000-8000-000000000000', app), {
+      redirect: 'error', signal: AbortSignal.timeout(10000),
+    });
+
+    return [
+      { attackId: 'static_note_removed', expected: '정적 data.json에는 메모 본문이 없음',
+        observed: staticEmpty ? '정적 data.json이 빈 자료 상태임' : `정적 data.json 상태를 확인하지 못함 (HTTP ${staticResponse.status})` },
+      { attackId: 'anonymous_note_list_denied', expected: '비로그인 목록 조회는 401로 거부',
+        observed: `비로그인 목록 조회 HTTP ${listResponse.status}` },
+      { attackId: 'anonymous_note_create_denied', expected: '비로그인 메모 추가는 401로 거부',
+        observed: `비로그인 메모 추가 HTTP ${createResponse.status}` },
+      { attackId: 'anonymous_note_item_denied', expected: '비로그인 한 건 조회는 401로 거부',
+        observed: `비로그인 한 건 조회 HTTP ${itemResponse.status}` },
+    ];
+  }
+
   throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
 }
