@@ -22,8 +22,9 @@ function noteId(request) {
 }
 
 function validUpdate(value) {
-  return value && typeof value === 'object' && !Array.isArray(value)
-    && typeof value.title === 'string' && value.title.trim().length >= 1
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  if (Object.keys(value).sort().join(',') !== 'body,title') return false;
+  return typeof value.title === 'string' && value.title.trim().length >= 1
     && value.title.trim().length <= 120
     && typeof value.body === 'string' && value.body.trim().length >= 1
     && value.body.length <= 5000;
@@ -51,6 +52,7 @@ export default async function handler(request, response) {
       .from('notes')
       .select('id, title, body')
       .eq('id', id)
+      .eq('owner_id', principal.userId)
       .maybeSingle();
     if (error) return response.status(500).json({ error: 'NOTE_READ_FAILED' });
     if (!data) return response.status(404).json({ error: 'NOTE_NOT_FOUND' });
@@ -59,10 +61,27 @@ export default async function handler(request, response) {
 
   if (request.method === 'PUT') {
     if (!validUpdate(request.body)) return response.status(400).json({ error: 'INVALID_NOTE' });
+
+    const { data: existing, error: existingError } = await tools.supabase
+      .from('notes')
+      .select('owner_id')
+      .eq('id', id)
+      .eq('owner_id', principal.userId)
+      .maybeSingle();
+    if (existingError) return response.status(500).json({ error: 'NOTE_READ_FAILED' });
+    if (!existing || existing.owner_id !== principal.userId) {
+      return response.status(404).json({ error: 'NOTE_NOT_FOUND' });
+    }
+
     const { data, error } = await tools.supabase
       .from('notes')
-      .update({ title: request.body.title.trim(), body: request.body.body })
+      .update({
+        title: request.body.title.trim(),
+        body: request.body.body,
+        owner_id: principal.userId,
+      })
       .eq('id', id)
+      .eq('owner_id', principal.userId)
       .select('id, title, body')
       .maybeSingle();
     if (error) return response.status(500).json({ error: 'NOTE_UPDATE_FAILED' });
@@ -74,6 +93,7 @@ export default async function handler(request, response) {
     .from('notes')
     .delete()
     .eq('id', id)
+    .eq('owner_id', principal.userId)
     .select('id')
     .maybeSingle();
   if (error) return response.status(500).json({ error: 'NOTE_DELETE_FAILED' });

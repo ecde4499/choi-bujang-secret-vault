@@ -104,5 +104,69 @@ export async function runAttackChecks(config) {
     ];
   }
 
+  if (config.step === 4) {
+    const rootResponse = await fetch(app, {
+      redirect: 'error', signal: AbortSignal.timeout(10000),
+    });
+    const nosniff = rootResponse.headers.get('x-content-type-options')?.toLowerCase() === 'nosniff';
+
+    const alephResponse = await fetch(new URL('/aleph.json', app), {
+      redirect: 'error', signal: AbortSignal.timeout(10000),
+    });
+    let alephVisible = false;
+    if (alephResponse.ok) {
+      try {
+        const data = await alephResponse.json();
+        alephVisible = data?.step === 4
+          && typeof data?.commit === 'string'
+          && typeof data?.repoUrl === 'string';
+      } catch {
+        // A non-JSON deployment identity is not a successful check.
+      }
+    }
+
+    const staticResponse = await fetch(new URL('/data.json', app), {
+      redirect: 'error', signal: AbortSignal.timeout(10000),
+    });
+    let staticEmpty = false;
+    if (staticResponse.ok) {
+      try {
+        const data = await staticResponse.json();
+        staticEmpty = Array.isArray(data.notes) && data.notes.length === 0;
+      } catch {
+        // The expected empty JSON file was not verified.
+      }
+    }
+
+    const listResponse = await fetch(new URL('/api/notes', app), {
+      redirect: 'error', signal: AbortSignal.timeout(10000),
+    });
+    let listJsonError = false;
+    try {
+      const body = await listResponse.json();
+      listJsonError = (listResponse.status === 401 || listResponse.status === 403)
+        && typeof body?.error === 'string' && body.error.length > 0;
+    } catch {
+      // HTML or empty response must not count as a correct denial.
+    }
+
+    const itemResponse = await fetch(new URL('/api/notes/00000000-0000-4000-8000-000000000000', app), {
+      redirect: 'error', signal: AbortSignal.timeout(10000),
+    });
+
+    return [
+      { attackId: 'anonymous_note_list_denied_json', expected: '비로그인 목록 요청은 401/403 JSON 오류로 거부',
+        observed: listJsonError ? `비로그인 목록 요청이 JSON 오류로 거부됨 (HTTP ${listResponse.status})` : `비로그인 목록 거부 형식 불일치 (HTTP ${listResponse.status})` },
+      { attackId: 'anonymous_note_item_denied', expected: '비로그인 한 건 요청은 401/403으로 거부',
+        observed: `비로그인 한 건 요청 HTTP ${itemResponse.status}` },
+      { attackId: 'deployment_identity_visible', expected: '/aleph.json에서 4단계 배포 식별 정보 확인',
+        observed: alephVisible ? '4단계 aleph.json 확인됨' : `aleph.json 확인 실패 (HTTP ${alephResponse.status})` },
+      { attackId: 'security_header_present', expected: '첫 화면에 X-Content-Type-Options nosniff 존재',
+        observed: nosniff ? '첫 화면 nosniff 헤더 확인됨' : `첫 화면 nosniff 헤더 없음 (HTTP ${rootResponse.status})` },
+      { attackId: 'static_note_removed', expected: '정적 data.json에는 메모 본문이 없음',
+        observed: staticEmpty ? '정적 data.json이 빈 자료 상태임' : `정적 data.json 상태를 확인하지 못함 (HTTP ${staticResponse.status})` },
+    ];
+  }
+
   throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
 }
