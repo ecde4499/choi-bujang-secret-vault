@@ -1,0 +1,18 @@
+{
+  "technique": {
+    "id": "T1110",
+    "name": "Brute Force"
+  },
+  "patterns": [
+    {
+      "name": "rapid_same_source_failures",
+      "condition": "같은 출발 주소에서 짧은 시간에 로그인 실패가 반복되거나 실패 건수가 비정상적으로 크게 누적됨",
+      "evidence": "MITRE ATT&CK T1110은 반복적인 인증 시도로 자격 증명을 추측하는 무차별 대입을 다룬다."
+    },
+    {
+      "name": "password_spraying_multiple_accounts",
+      "condition": "같은 출발 주소에서 동일한 비밀번호를 여러 계정에 연속 적용한 정황이 명시됨",
+      "evidence": "MITRE ATT&CK T1110의 무차별 대입에는 여러 계정에 같은 비밀번호를 시도하는 password spraying 형태가 포함된다."
+    }
+  ]
+}
