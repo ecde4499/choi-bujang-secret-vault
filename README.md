@@ -90,4 +90,17 @@ DB 권한 회수는 `docs/STEP5_REVOKE_DIRECT_ACCESS.sql`을 검토한 뒤 Supab
 - 보안 헤더: `X-Content-Type-Options: nosniff` 유지
 - 배포 식별 파일: 빌드 시 `/aleph.json`에 `allowedRoutes`, `originalApiUrl` 포함
 
+
+## 보너스 xdr-02 — 웹 주입 공격 탐지
+
+- 원본 경보: `xdr/fixtures/web-injection.json` (수정하지 않음)
+- 읽기 모듈: `xdr/web-injection/read-alerts.mjs`
+- 패턴 근거: MITRE ATT&CK T1190, SQL 구문·스크립트 삽입·반복 경로 이탈
+- 판정 모듈: `xdr/web-injection/decide.mjs`
+- 응답 연결 모듈: `xdr/web-injection/respond.mjs`
+- 실행 명령: `npm run xdr:run -- web-injection`
+- 실제 실행 결과: block 8 / alert 9 / record 9
+- 정상 이벤트 오탐 차단: 0건
+- 결과 파일: `xdr/web-injection/result.json`
+
 [AGENTS.md](AGENTS.md)의 공통 규칙을 계속 적용합니다. 실제 비밀번호·JWT·서버 전용 키·실제 이메일 값은 GitHub나 제출 묶음에 넣지 않습니다.
