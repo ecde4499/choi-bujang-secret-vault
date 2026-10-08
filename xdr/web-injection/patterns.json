@@ -1,0 +1,23 @@
+{
+  "technique": {
+    "id": "T1190",
+    "name": "Exploit Public-Facing Application"
+  },
+  "patterns": [
+    {
+      "name": "sql_syntax_in_request_argument",
+      "condition": "요청 인자에 SQL 구문이나 SQL 주입에 쓰이는 구분자·결합 형태가 나타남",
+      "evidence": "MITRE ATT&CK T1190은 외부 공개 애플리케이션의 입력 취약점을 악용해 접근하는 행위를 다룬다."
+    },
+    {
+      "name": "script_tag_in_request_argument",
+      "condition": "요청 인자에 script 태그 또는 스크립트 삽입 표기가 나타남",
+      "evidence": "MITRE ATT&CK T1190은 외부 공개 애플리케이션의 입력 처리 취약점을 악용하는 공격을 포함한다."
+    },
+    {
+      "name": "repeated_parent_path_traversal",
+      "condition": "요청 경로 또는 인자에서 ../ 같은 상위 경로 이동 표기가 반복됨",
+      "evidence": "MITRE ATT&CK T1190은 공개 애플리케이션의 경로 처리 취약점을 악용해 의도하지 않은 자원에 접근하는 행위를 포함할 수 있다."
+    }
+  ]
+}
