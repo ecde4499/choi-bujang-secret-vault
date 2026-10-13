@@ -36,7 +36,24 @@ function serverTools() {
 }
 
 function noteId(request) {
-  const value = Array.isArray(request.query?.id) ? request.query.id[0] : request.query?.id;
+  const value = Array.isArray(request.query?.id) ? null : request.query?.id;
+  if (typeof request.url === 'string') {
+    let target;
+    try { target = new URL(request.url, 'https://local-request.invalid'); } catch { return null; }
+    const queryKeys = [...target.searchParams.keys()];
+    if (queryKeys.some((key) => key !== 'id') || target.searchParams.getAll('id').length > 1) {
+      return null;
+    }
+    if (target.pathname.includes('%') || target.pathname.includes('..')
+        || target.pathname.includes('\\')) return null;
+    const match = /^\/api\/notes\/([^/]+)\/?$/u.exec(target.pathname);
+    if (!match || !UUID.test(match[1])) return null;
+    const urlId = target.searchParams.get('id');
+    if (urlId !== null && urlId.toLowerCase() !== match[1].toLowerCase()) return null;
+    if (value !== undefined && (typeof value !== 'string'
+        || value.toLowerCase() !== match[1].toLowerCase())) return null;
+    return match[1];
+  }
   return typeof value === 'string' && UUID.test(value) ? value : null;
 }
 
@@ -58,6 +75,10 @@ export default async function handler(request, response) {
 
   const id = noteId(request);
   if (!id) return response.status(400).json({ error: 'INVALID_NOTE_ID' });
+  if (request.query && Object.keys(request.query).some((key) => key !== 'id')) {
+    return response.status(400).json({ error: 'INVALID_RESOURCE_QUERY' });
+  }
+  response.setHeader('X-Resource-Id', `notes:${id}`);
 
   let tools;
   try { tools = serverTools(); } catch { tools = null; }
@@ -69,13 +90,15 @@ export default async function handler(request, response) {
   if (request.method === 'GET') {
     const { data, error } = await tools.supabase
       .from('notes')
-      .select('id, title, body')
+      .select('id, title, body, owner_id')
       .eq('id', id)
       .eq('owner_id', principal.userId)
       .maybeSingle();
     if (error) return response.status(500).json({ error: 'NOTE_READ_FAILED' });
-    if (!data) return response.status(404).json({ error: 'NOTE_NOT_FOUND' });
-    return response.status(200).json(data);
+    if (!data || data.owner_id !== principal.userId) {
+      return response.status(404).json({ error: 'NOTE_NOT_FOUND' });
+    }
+    return response.status(200).json({ id: data.id, title: data.title, body: data.body });
   }
 
   if (request.method === 'PUT') {
@@ -97,15 +120,27 @@ export default async function handler(request, response) {
       .update({
         title: request.body.title.trim(),
         body: request.body.body,
-        owner_id: principal.userId,
       })
       .eq('id', id)
       .eq('owner_id', principal.userId)
-      .select('id, title, body')
+      .select('id, title, body, owner_id')
       .maybeSingle();
     if (error) return response.status(500).json({ error: 'NOTE_UPDATE_FAILED' });
-    if (!data) return response.status(404).json({ error: 'NOTE_NOT_FOUND' });
-    return response.status(200).json(data);
+    if (!data || data.owner_id !== principal.userId) {
+      return response.status(404).json({ error: 'NOTE_NOT_FOUND' });
+    }
+    return response.status(200).json({ id: data.id, title: data.title, body: data.body });
+  }
+
+  const { data: existing, error: existingError } = await tools.supabase
+    .from('notes')
+    .select('owner_id')
+    .eq('id', id)
+    .eq('owner_id', principal.userId)
+    .maybeSingle();
+  if (existingError) return response.status(500).json({ error: 'NOTE_READ_FAILED' });
+  if (!existing || existing.owner_id !== principal.userId) {
+    return response.status(404).json({ error: 'NOTE_NOT_FOUND' });
   }
 
   const { data, error } = await tools.supabase
@@ -113,9 +148,11 @@ export default async function handler(request, response) {
     .delete()
     .eq('id', id)
     .eq('owner_id', principal.userId)
-    .select('id')
+    .select('id, owner_id')
     .maybeSingle();
   if (error) return response.status(500).json({ error: 'NOTE_DELETE_FAILED' });
-  if (!data) return response.status(404).json({ error: 'NOTE_NOT_FOUND' });
+  if (!data || data.owner_id !== principal.userId) {
+    return response.status(404).json({ error: 'NOTE_NOT_FOUND' });
+  }
   return response.status(204).end();
 }

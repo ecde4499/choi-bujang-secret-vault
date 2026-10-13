@@ -168,7 +168,7 @@ export async function runAttackChecks(config) {
     ];
   }
 
-  if ([5, 6, 7].includes(config.step)) {
+  if ([5, 6, 7, 8].includes(config.step)) {
     const rootResponse = await fetch(app, {
       redirect: 'error', signal: AbortSignal.timeout(10000),
     });

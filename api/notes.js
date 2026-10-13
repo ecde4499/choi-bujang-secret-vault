@@ -60,15 +60,24 @@ export default async function handler(request, response) {
 
   const principal = await tools.verifyLogin(requestAuthorization(request));
   if (!principal) return response.status(401).json({ error: 'UNAUTHORIZED' });
+  if (request.query && Object.keys(request.query).length > 0) {
+    return response.status(400).json({ error: 'INVALID_RESOURCE_QUERY' });
+  }
+
+  response.setHeader('X-Resource-Id', 'notes:own-list');
 
   if (request.method === 'GET') {
     const { data, error } = await tools.supabase
       .from('notes')
-      .select('id, title, body')
+      .select('id, title, body, owner_id')
       .eq('owner_id', principal.userId)
       .order('created_at', { ascending: true });
     if (error) return response.status(500).json({ error: 'NOTES_READ_FAILED' });
-    return response.status(200).json(data ?? []);
+    const own = Array.isArray(data)
+      ? data.filter((note) => note?.owner_id === principal.userId)
+        .map(({ id, title, body }) => ({ id, title, body }))
+      : [];
+    return response.status(200).json(own);
   }
 
   if (!validNoteInput(request.body)) {
@@ -83,5 +92,6 @@ export default async function handler(request, response) {
     body: request.body.body,
   });
   if (error) return response.status(500).json({ error: 'NOTE_CREATE_FAILED' });
+  response.setHeader('X-Resource-Id', `notes:${id}`);
   return response.status(201).json({ id });
 }

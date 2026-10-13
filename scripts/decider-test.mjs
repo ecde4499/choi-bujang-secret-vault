@@ -38,6 +38,35 @@ export async function checkDecider({ decide, ruleIds }) {
       decision: 'allow' },
     );
   }
+  if (ruleIds.includes('resource_scope')) {
+    checks.push(
+      { name: '정확한 메모 단건 구역 허용', request: { ...normal,
+        requestId: randomUUID(), path: '/notes/11111111-1111-4111-8111-111111111111' },
+      decision: 'allow' },
+      { name: '메모 전체 목록 구역 거부', request: { ...normal,
+        requestId: randomUUID(), path: '/notes', route: 'GET /notes' },
+      decision: 'deny', reasonCode: 'resource_not_allowed' },
+      { name: '일반 학생의 공지 수정 거부', request: { ...normal,
+        requestId: randomUUID(), service: 'notices', method: 'PUT',
+        path: '/notices/notice-demo', route: 'PUT /notices/:id' },
+      decision: 'deny', reasonCode: 'resource_not_allowed' },
+      { name: '강사 역할 이름만으로 공지 수정 거부', request: { ...normal,
+        requestId: randomUUID(), subjectId: 'instructor_fixture',
+        deviceId: 'bbbbbbbbbbbbbbbb', service: 'notices', method: 'PUT',
+        path: '/notices/notice-demo', route: 'PUT /notices/:id' },
+      decision: 'deny', reasonCode: 'resource_not_allowed' },
+      { name: '공지 단건 읽기 구역 허용', request: { ...normal,
+        requestId: randomUUID(), service: 'notices', method: 'GET',
+        path: '/notices/notice-demo', route: 'GET /notices/:id' },
+      decision: 'allow' },
+      { name: '알 수 없는 기능 경로 거부', request: { ...normal,
+        requestId: randomUUID(), path: '/notes/export' },
+      decision: 'deny', reasonCode: 'resource_not_allowed' },
+      { name: 'API 메모 단건 경로 허용', request: { ...normal,
+        requestId: randomUUID(), path: '/api/notes/demo', route: 'GET /api/notes/:id' },
+      decision: 'allow' },
+    );
+  }
   const results = [];
   for (const item of checks) {
     const response = await decide(item.request);
