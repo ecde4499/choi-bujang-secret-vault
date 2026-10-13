@@ -168,7 +168,7 @@ export async function runAttackChecks(config) {
     ];
   }
 
-  if (config.step === 5) {
+  if ([5, 6].includes(config.step)) {
     const rootResponse = await fetch(app, {
       redirect: 'error', signal: AbortSignal.timeout(10000),
     });
@@ -184,7 +184,7 @@ export async function runAttackChecks(config) {
     if (alephResponse.ok) {
       try {
         const data = await alephResponse.json();
-        alephRoutesVisible = data?.step === 5
+        alephRoutesVisible = data?.step === config.step
           && Array.isArray(data?.allowedRoutes)
           && data.allowedRoutes.length > 0
           && data?.originalApiUrl === config.originalApiUrl;
@@ -218,8 +218,8 @@ export async function runAttackChecks(config) {
     return [
       { attackId: 'anonymous_note_list_denied_json', expected: '비로그인 서버 함수 요청은 401/403 JSON 오류로 거부',
         observed: listJsonError ? `비로그인 목록 요청이 JSON 오류로 거부됨 (HTTP ${listResponse.status})` : `비로그인 목록 거부 형식 불일치 (HTTP ${listResponse.status})` },
-      { attackId: 'deployment_routes_visible', expected: '/aleph.json에 5단계 allowedRoutes와 originalApiUrl 존재',
-        observed: alephRoutesVisible ? '5단계 allowedRoutes와 originalApiUrl 확인됨' : `aleph.json 확인 실패 (HTTP ${alephResponse.status})` },
+      { attackId: 'deployment_routes_visible', expected: `/aleph.json에 ${config.step}단계 allowedRoutes와 originalApiUrl 존재`,
+        observed: alephRoutesVisible ? `${config.step}단계 allowedRoutes와 originalApiUrl 확인됨` : `aleph.json 확인 실패 (HTTP ${alephResponse.status})` },
       { attackId: 'security_header_present', expected: '첫 화면에 X-Content-Type-Options nosniff 존재',
         observed: nosniff ? '첫 화면 nosniff 헤더 확인됨' : `첫 화면 nosniff 헤더 없음 (HTTP ${rootResponse.status})` },
       { attackId: 'browser_public_key_absent', expected: '첫 화면 코드에 Supabase publishable key 문자열이 없음',

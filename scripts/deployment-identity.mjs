@@ -11,7 +11,7 @@ export function deploymentIdentity(env, config) {
   if (env.VERCEL_GIT_PROVIDER !== 'github' || !OWNER.test(owner || '')
       || !REPO.test(repo || '') || repo === '.' || repo === '..'
       || repo.toLowerCase().endsWith('.git') || !SHA.test(commit || '')
-      || !HOST.test(host || '') || ![1, 2, 3, 4, 5].includes(config?.step)
+      || !HOST.test(host || '') || ![1, 2, 3, 4, 5, 6].includes(config?.step)
       || (config?.step >= 3 && (!Array.isArray(config.allowedRoutes) || !config.allowedRoutes.length))
       || (config?.step >= 5 && (typeof config.originalApiUrl !== 'string' || !config.originalApiUrl.startsWith('https://')))
       || typeof config.judgeIssuer !== 'string'

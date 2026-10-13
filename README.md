@@ -1,6 +1,6 @@
-# BYTE BACK 방어전 — 5단계 자료 요청을 서버 한곳으로 모읍니다
+# BYTE BACK 방어전 — 6단계 등록한 기기만 자료실에 들어옵니다
 
-4단계의 로그인·소유자 검사를 유지하면서 브라우저의 메모 요청과 로그인 요청을 같은 사이트의 서버 함수로 모은 저장점입니다. 브라우저 화면 코드에는 Supabase publishable/anon 키를 두지 않습니다. 서버 함수는 Vercel의 `SUPABASE_URL`, 로그인용 `SUPABASE_PUBLISHABLE_KEY`, 메모·검증용 `SUPABASE_SECRET_KEY`를 사용합니다.
+1~5단계의 로그인·소유자 검사와 서버 함수 경계를 유지하면서, 6단계에서는 ZTNA 판정기가 운영 엔진이 확인한 `deviceRegistered` 값으로 등록 기기만 허용합니다. 인증서·CA·서명 키를 새로 만들지 않으며 기존 브라우저/서버 비밀값 처리도 그대로 유지합니다.
 
 ## 현재 구현
 
@@ -90,6 +90,35 @@ DB 권한 회수는 `docs/STEP5_REVOKE_DIRECT_ACCESS.sql`을 검토한 뒤 Supab
 - 보안 헤더: `X-Content-Type-Options: nosniff` 유지
 - 배포 식별 파일: 빌드 시 `/aleph.json`에 `allowedRoutes`, `originalApiUrl` 포함
 
+
+
+## 6단계 — 등록한 기기만 허용
+
+`src/decider.mjs`의 규칙 ID는 `device_registered`입니다. 판정 요청의 `deviceRegistered`가 정확히 `true`일 때만 `allow / approved`를 반환하고, `false`이거나 값이 없으면 `deny / device_not_registered`로 거부합니다. 사용자 식별에는 계약의 가명 식별자 `subjectId`가 들어오며, Supabase 사용자 번호나 브라우저가 임의로 보낸 사용자·기기 상태를 판정 근거로 만들지 않습니다.
+
+확인 순서:
+
+1. 저장소 루트에서 `npm run decider:test`를 실행합니다.
+2. `통과 · 등록 기기의 정상 요청`이 나오는지 확인합니다.
+3. `통과 · 미등록 기기의 가상 요청`이 나오는지 확인합니다.
+4. 이 명령은 로컬 가상 요청 연습이며 실제 심판 판정으로 기록하지 않습니다.
+5. 미등록 기기 공격 자체는 심판이 별도 가상 요청으로 확인합니다.
+
+로컬에서 `npm run decider:test`를 실행해 `통과 · 등록 기기의 정상 요청`과 `통과 · 미등록 기기의 가상 요청`을 모두 확인했습니다. 이 결과는 로컬 가상 요청 연습이며 심판 판정으로 기록하지 않습니다.
+
+이번 단계에는 별도로 설치할 접속 프로그램이 없으며 설치 명령도 필요하지 않습니다.
+
+## 6단계 저장점 기록
+
+- 단계: 6
+- 판정기: `src/decider.mjs`
+- 규칙 ID: `device_registered`
+- 등록 기기: `allow / approved`
+- 미등록 또는 누락: `deny / device_not_registered`
+- GitHub 저장소: `https://github.com/ecde4499/choi-bujang-secret-vault`
+- 배포 주소: `https://choi-bujang-secret-vault-ashy.vercel.app`
+- 로그인 발급자·허용 경로·원본 API 주소: 5단계 설정 그대로 유지
+- 인증서·CA·서명 키: 새로 생성하지 않음
 
 ## 보너스 xdr-02 — 웹 주입 공격 탐지
 
