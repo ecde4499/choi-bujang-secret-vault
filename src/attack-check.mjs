@@ -168,7 +168,7 @@ export async function runAttackChecks(config) {
     ];
   }
 
-  if ([5, 6, 7, 8, 9].includes(config.step)) {
+  if ([5, 6, 7, 8, 9, 10].includes(config.step)) {
     const rootResponse = await fetch(app, {
       redirect: 'error', signal: AbortSignal.timeout(10000),
     });
@@ -215,7 +215,7 @@ export async function runAttackChecks(config) {
       originalStatus = `요청 실패: ${error.name ?? 'Error'}`;
     }
 
-    return [
+    const attempts = [
       { attackId: 'anonymous_note_list_denied_json', expected: '비로그인 서버 함수 요청은 401/403 JSON 오류로 거부',
         observed: listJsonError ? `비로그인 목록 요청이 JSON 오류로 거부됨 (HTTP ${listResponse.status})` : `비로그인 목록 거부 형식 불일치 (HTTP ${listResponse.status})` },
       { attackId: 'deployment_routes_visible', expected: `/aleph.json에 ${config.step}단계 allowedRoutes와 originalApiUrl 존재`,
@@ -227,6 +227,24 @@ export async function runAttackChecks(config) {
       { attackId: 'original_api_without_key', expected: '원본 자료 경로를 키 없이 호출한 실제 결과 기록',
         observed: `원본 자료 경로 직접 요청 ${originalStatus}; anon 키 검사는 심판 확인 대상` },
     ];
+
+    if (config.step >= 10) {
+      const restorePost = await fetch(new URL('/api/restore/00000000-0000-4000-8000-000000000000', app), {
+        method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}',
+        redirect: 'error', signal: AbortSignal.timeout(10000),
+      });
+      const restoreGet = await fetch(new URL('/api/restore/00000000-0000-4000-8000-000000000000', app), {
+        method: 'GET', redirect: 'error', signal: AbortSignal.timeout(10000),
+      });
+      attempts.push(
+        { attackId: 'anonymous_restore_denied', expected: '비로그인 단건 복구 POST는 401로 거부',
+          observed: `비로그인 복구 POST HTTP ${restorePost.status}` },
+        { attackId: 'restore_get_denied', expected: '복구 경로 GET은 405로 거부',
+          observed: `복구 GET HTTP ${restoreGet.status}` },
+      );
+    }
+
+    return attempts;
   }
 
   throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');

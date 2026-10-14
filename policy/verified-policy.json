@@ -1,0 +1,35 @@
+{
+  "schema": "aleph.policy.verified.v1",
+  "label": "9단계 저장점",
+  "verifiedCommit": "afa0c5c674fd1a6eb98239c6deb6397e926dc660",
+  "note": "침해 전 검증 기준으로 고정한 시험 정책 사본입니다. 실제 운영 정책과 메모 자료는 포함하지 않습니다.",
+  "files": {
+    "src/decider.mjs": {
+      "gitBlob": "8fe8c82a9c3e7a50528ad81a8625e27a76f8bb15"
+    },
+    "src/detect.mjs": {
+      "gitBlob": "f6020a4b0e26536e5bc5bb4ec10aeea3d3692d2f"
+    },
+    "src/verify-login.mjs": {
+      "gitBlob": "784ec5af7067e01c6b7f83cf423db0b8c63d9e09"
+    },
+    "api/notes.js": {
+      "gitBlob": "d077dff00ada68b3939b4d57bca6545682bd44e2"
+    },
+    "api/notes/[id].js": {
+      "gitBlob": "55274bba0e85bd108f265fb08d55c6e68697dd06"
+    },
+    "api/notices/[id].js": {
+      "gitBlob": "5f22808e458bc8e22d2fdd4861baeec0f7deebd0"
+    },
+    "aleph.config.json": {
+      "gitBlob": "9b0ca34d191f9e7daf38274f8f192ced659b6f72",
+      "policyKeys": [
+        "identityProvider",
+        "allowedRoutes",
+        "originalApiUrl",
+        "restoreRoute"
+      ]
+    }
+  }
+}

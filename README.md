@@ -1,6 +1,6 @@
-# BYTE BACK 방어전 — 9단계 도플갱어를 찾고 권한을 거둡니다
+# BYTE BACK 방어전 — 10단계 백업에서 자료실을 되살립니다
 
-1~8단계의 로그인·소유자 검사, 서버 함수 경계, 등록 기기·추가 확인·자원 구역 규칙을 유지하면서 9단계에서는 비밀값 없는 가상 사건만 읽어 복합 조회 이상을 탐지하고, 확인된 가상 기기 한 개에 대한 회수 제안만 별도 결과로 만듭니다. 실제 회수 API나 기기 권한 변경은 하지 않습니다.
+1~9단계의 로그인·소유자 검사, 서버 함수 경계, 등록 기기·추가 확인·자원 구역·탐지 규칙을 유지하면서 10단계에서는 검증된 9단계 정책 사본과 현재 시험 정책의 차이를 먼저 보여 주고, 확인된 범위만 되돌릴 수 있는 절차와 비공개 가상 메모 한 건 복구 경로를 추가합니다. 실제 운영 정책은 건드리지 않습니다.
 
 ## 현재 구현
 
@@ -243,6 +243,55 @@ DB 권한 회수는 `docs/STEP5_REVOKE_DIRECT_ACCESS.sql`을 검토한 뒤 Supab
 - GitHub 저장소: `https://github.com/ecde4499/choi-bujang-secret-vault`
 - 배포 주소: `https://choi-bujang-secret-vault-ashy.vercel.app`
 - 로그인 발급자·허용 경로·원본 API 주소: 8단계 설정 그대로 유지
+
+
+
+## 10단계 — 백업에서 자료실을 되살립니다
+
+정책 복구 기준은 검증된 9단계 저장점 `afa0c5c674fd1a6eb98239c6deb6397e926dc660`입니다. `policy/verified-policy.json`에는 기준 커밋과 정책 파일의 Git blob 지문을 기록하고, `src/recovery.mjs`는 실행할 때 그 커밋을 다시 읽어 사본 목록과 지문을 검증합니다. 사본이 없거나 기준 커밋·파일 지문이 맞지 않으면 비교와 복원을 중단합니다.
+
+`npm run policy:diff`는 읽기 전용으로 복원 기준 버전과 현재 시험 정책의 변경 범위만 보여 줍니다. Windows 체크아웃의 CRLF/LF 차이는 내용 변경으로 세지 않습니다. `npm run policy:restore`도 먼저 같은 범위와 확인 번호만 보여 주며, 실제 복원은 `--apply --confirm=<확인 번호>`가 정확히 일치할 때만 가능합니다. `aleph.config.json`은 `identityProvider`, `allowedRoutes`, `originalApiUrl`, `restoreRoute`만 정책 범위로 다루고 단계·저장소·배포 주소·`judgeIssuer` 같은 다른 설정은 보존합니다. 복원 감사 기록은 기존 내용을 지우지 않고 `artifacts/policy-restore-audit.jsonl` 끝에 덧붙이며 실제 운영 정책과 DB를 직접 변경하지 않습니다.
+
+비공개 가상 메모 복구 서비스는 기존 `notes` 서비스의 **`POST /api/restore/:id`** 한 경로입니다. `docs/STEP10_NOTE_BACKUP.sql`은 현재 소유자가 있는 가상 메모의 최초 사본을 `public.notes_backup`에 저장하고 기존 사본을 덮어쓰지 않습니다. 복구 API는 요청 본문에서 역할·소유자·메모 내용을 받지 않고, 기존 로그인 검증에서 얻은 사용자 ID와 사본의 `owner_id`가 일치하는 지정 UUID 한 건만 서버 전용 DB 함수로 복구합니다. DB 함수는 사본의 ID·소유자·내용 SHA-256을 복원 전 검증하고 복원 뒤 다시 같은 ID·소유자·해시를 확인한 뒤 성공 감사 한 건만 추가합니다. 다른 메모와 기존 감사 기록은 수정하지 않습니다.
+
+10단계 확인 기록:
+- `npm run policy:diff`에서 9단계 기준 커밋과 사본 검증 통과를 확인했습니다. 최종 10단계 설정에서는 의도적으로 추가한 `aleph.config.json`의 `allowedRoutes`, `restoreRoute` 두 정책 키만 변경 범위로 표시됩니다. 처음 Windows 줄바꿈 차이가 변경으로 보였지만 GitHub 대조로 실제 정책 변경이 없음을 확인한 뒤 CRLF/LF를 정규화했습니다.
+- `npm run policy:restore` 미리보기에서도 같은 두 정책 키와 확인 번호가 실행 전에 표시됐고, 실제 `--apply` 복원은 실행하지 않았습니다.
+- `npm run restore:test`의 단건 ID/해시 반환, 다른 소유자 거부, 잘못된 사본 해시 거부, 복원 후 검증 실패 거부 4개 가상 시험이 모두 통과했습니다. 실제 DB 결과를 뜻하지 않습니다.
+- Supabase에서 사본 준비 후 `live_rows=5`, `backup_rows=5`, `bad_hash_rows=0`, 복구 전 `mismatch_rows=0`을 확인했습니다.
+- 실제 배포에서 시험 계정 B가 소유한 지정 가상 메모 한 건에 `POST /api/restore/:id`를 실행해 HTTP 200과 `restored: true`를 확인했습니다. UUID·본문·해시 원문은 README에 기록하지 않습니다.
+- 복구 뒤 B 로그인으로 A 소유 메모를 직접 `GET /api/notes/:id` 요청했을 때 HTTP 404 `NOTE_NOT_FOUND`로 다시 거부되는 것을 확인했습니다.
+- 복구 후 전체 `mismatch_rows`·감사 건수 재조회와 A 자신의 메모 200 정상 조회는 이 대화에서 구체 결과를 받지 못해 **미확인**으로 남깁니다. 다른 메모 전체 불변도 별도 실측으로 꾸미지 않습니다.
+
+### 복구 뒤 1~9단계 재시험 순서
+
+1. **1~2단계 공개 자료 경계:** `/data.json`에 메모 본문이 없고 브라우저가 원본 Supabase REST를 직접 사용하지 않는지 확인합니다.
+2. **3단계 인증:** 로그아웃 상태의 `GET /api/notes`와 단건 자료 요청이 401/403 JSON으로 거부되는지 확인합니다.
+3. **4단계 소유권:** A 자신의 메모는 정상 조회되고, B가 A 메모 UUID를 직접 요청하면 404 `NOTE_NOT_FOUND`인지 확인합니다.
+4. **5단계 서버 경계:** 화면에 publishable key 값이 노출되지 않고 원본 자료 권한 회수와 서버 함수 CRUD가 유지되는지 확인합니다.
+5. **6단계 기기 규칙:** `npm run decider:test`에서 등록 기기 정상 허용과 미등록 기기 거부를 확인합니다.
+6. **7단계 추가 확인:** `npm run fixture:7`과 `npm run decider:test`에서 정상 허용, 복합 이상 `step_up`, 확인 뒤 허용을 확인합니다.
+7. **8단계 자원 구역:** 정확한 메모 단건 구역만 허용되고 전체 목록·알 수 없는 기능 경로·일반 학생 공지 수정은 거부되는지 확인합니다. 실제 타인 메모 404도 다시 확인합니다.
+8. **9단계 탐지:** `npm run detect:test`에서 정상/단독 신호는 관찰, 복합 다량 조회만 의심, 대상 가상 기기 한 개만 회수 제안인지 확인합니다.
+9. **10단계 복구 확인:** `npm run policy:diff`로 기준 버전과 변경 범위를 보고 `npm run restore:test`를 다시 실행한 뒤, 실제 B 한 건 복구가 필요할 때만 `POST /api/restore/:id`를 사용합니다.
+
+위 재시험 중 실제로 다시 실행하지 않은 항목은 기존 기록을 재사용해 성공으로 꾸미지 않고 미실행으로 남깁니다. 운영 반 엔진의 실제 기기 회수, 실제 강사 공지 수정 성공, 정책 `--apply` 복원은 현재 미실행입니다.
+
+## 10단계 저장점 기록
+
+- 단계: 10
+- 정책 복구 기준: 9단계 저장점 `afa0c5c674fd1a6eb98239c6deb6397e926dc660`
+- 정책 미리보기: `npm run policy:diff`
+- 정책 복원 절차: `npm run policy:restore` → 확인 번호 검토 → 명시적 `--apply --confirm=...`
+- 메모 복구 서비스/경로: `notes` · `POST /api/restore/:id`
+- 비공개 사본: `public.notes_backup`; 기존 사본 덮어쓰기 없음
+- 감사 기록: 성공 복구만 `public.notes_restore_audit`에 추가, 기존 감사 삭제 없음
+- 실제 B 한 건 복구: HTTP 200 / `restored: true` 확인
+- 복구 후 B→A 요청: HTTP 404 / `NOTE_NOT_FOUND` 확인
+- 복구 후 A 자기 메모 200 및 전체 사본/감사 재조회: 미확인
+- GitHub 저장소: `https://github.com/ecde4499/choi-bujang-secret-vault`
+- 배포 주소: `https://choi-bujang-secret-vault-ashy.vercel.app`
+- 로그인 발급자·원본 API 주소·기존 1~9단계 규칙: 유지
 
 
 ## 보너스 xdr-02 — 웹 주입 공격 탐지
