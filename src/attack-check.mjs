@@ -168,7 +168,7 @@ export async function runAttackChecks(config) {
     ];
   }
 
-  if ([5, 6, 7, 8, 9, 10, 11].includes(config.step)) {
+  if ([5, 6, 7, 8, 9, 10, 11, 12].includes(config.step)) {
     const rootResponse = await fetch(app, {
       redirect: 'error', signal: AbortSignal.timeout(10000),
     });
@@ -273,6 +273,21 @@ export async function runAttackChecks(config) {
           observed: `비로그인 기기 상태 HTTP ${deviceStatus.status}` },
         { attackId: 'offline_guide_public', expected: '오프라인 안내는 공개하되 보호 자료는 포함하지 않음',
           observed: `오프라인 안내 HTTP ${offlineResponse.status}` },
+      );
+    }
+
+    if (config.step >= 12) {
+      const opsPage = await fetch(new URL('/ops.html', app), {
+        redirect: 'error', signal: AbortSignal.timeout(10000),
+      });
+      const opsApi = await fetch(new URL('/api/ops', app), {
+        redirect: 'error', signal: AbortSignal.timeout(10000),
+      });
+      attempts.push(
+        { attackId: 'ops_room_public_shell', expected: '작전실 화면 파일은 공개 경로에서 열림',
+          observed: `작전실 화면 HTTP ${opsPage.status}` },
+        { attackId: 'ops_summary_requires_login', expected: '가린 서버 요약 API는 비로그인 요청을 401로 거부',
+          observed: `비로그인 작전실 API HTTP ${opsApi.status}` },
       );
     }
 
