@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101a28">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <title>BYTE BACK | 탈환 작전실</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; }
+    body { margin: 0; min-height: 100vh; background: #0d1724; color: #edf5ff; }
+    main { max-width: 1180px; margin: 0 auto; padding: 40px 20px 64px; }
+    a { color: #8ad8df; }
+    h1 { margin: 10px 0 8px; font-size: clamp(32px, 6vw, 52px); }
+    h2 { margin-top: 0; }
+    p { color: #bed0e5; line-height: 1.7; }
+    .eyebrow { color: #8ad8df; font-size: 14px; font-weight: 800; letter-spacing: .08em; }
+    .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); margin: 22px 0; }
+    .card, section { border: 1px solid #465f78; border-radius: 15px; background: #17283a; padding: 18px; }
+    .card strong { display: block; font-size: 26px; margin-top: 8px; }
+    section { margin: 18px 0; }
+    button { border: 0; border-radius: 9px; padding: 10px 14px; font: inherit; font-weight: 700; cursor: pointer; background: #8ad8df; color: #10202c; }
+    button.secondary { background: #50677e; color: #edf5ff; }
+    button:disabled { opacity: .55; cursor: wait; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .status { color: #ffd7a0; min-height: 1.5em; }
+    .ok { color: #9ce3b2; }
+    .bad { color: #ffb1b1; }
+    .muted { color: #93a8bf; }
+    .table-wrap { overflow: auto; border: 1px solid #405870; border-radius: 12px; }
+    table { width: 100%; border-collapse: collapse; min-width: 880px; font-size: 13px; }
+    th, td { text-align: left; padding: 11px 12px; border-bottom: 1px solid #344b61; vertical-align: top; }
+    th { background: #102033; position: sticky; top: 0; }
+    code { overflow-wrap: anywhere; }
+    details { margin-top: 12px; }
+    summary { cursor: pointer; color: #8ad8df; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="eyebrow">BYTE BACK · 12단계</div>
+    <h1>탈환 작전실</h1>
+    <p>판정 규칙, 탐지 사건 연결 상태, 회수 집행 상태, 복구 기준 버전을 같은 서버 응답에서 확인합니다. 실제 API 실측과 미실행을 구분하며 메모 제목·본문·토큰·사용자 식별자는 표시하지 않습니다.</p>
+    <p><a href="/">← 안전 자료실로 돌아가기</a></p>
+
+    <div class="grid">
+      <div class="card"><span>학생 판정 규칙</span><strong id="rules-count">-</strong><span id="rules-detail" class="muted">미조회</span></div>
+      <div class="card"><span>탐지 운영 사건</span><strong id="detection-state">-</strong><span class="muted">미연결이면 미실행</span></div>
+      <div class="card"><span>실제 회수 집행</span><strong id="revocation-state">-</strong><span class="muted">제안과 집행을 구분</span></div>
+      <div class="card"><span>복구 기준</span><strong id="recovery-state">-</strong><span id="recovery-detail" class="muted">미조회</span></div>
+      <div class="card"><span>공식 41종</span><strong id="official-state">-</strong><span class="muted">실행하지 않은 시험은 통과로 세지 않음</span></div>
+    </div>
+
+    <section>
+      <h2>출처와 일치 확인</h2>
+      <p id="engine-source">미조회</p>
+      <p id="consistency" class="status">서버 기록을 읽기 전입니다.</p>
+      <div class="row">
+        <button id="refresh" type="button">서버 요약 새로 읽기</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>가린 서버 기록</h2>
+      <p>화면 수치는 아래 기록 배열에서 다시 계산합니다. 기록에는 메모 본문, 이메일, 토큰, 실제 사용자·기기 식별자를 넣지 않습니다.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>영역</th><th>상태</th><th>출처</th><th>수치</th><th>설명</th></tr></thead>
+          <tbody id="records"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>1~11단계 정상·금지 요청 실측표</h2>
+      <p>현재 최종 배포에서 안전하게 다시 보낼 수 있는 읽기 요청만 실제로 실행합니다. 타인 UUID, 실제 복구 POST, ALEPH SDP 판정·탐지 입력처럼 별도 시험 자료나 엔진이 필요한 항목은 <strong>미실행</strong>으로 남깁니다.</p>
+      <div class="row">
+        <button id="verify" type="button">안전한 API 실측 실행</button>
+        <button id="export" class="secondary" type="button" disabled>표 JSON 저장</button>
+      </div>
+      <p id="verification-status" class="status">미실행</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>시험/단계</th><th>구분</th><th>요청</th><th>기대 결과</th><th>실제 API 결과</th><th>요청 ID</th><th>확인 시각</th></tr></thead>
+          <tbody id="verification-rows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>공식 41종 시험 상태</h2>
+      <p>이 화면은 ALEPH 판정 화면의 공식 41종 결과를 수신하지 않습니다. 따라서 현재 연결되지 않은 41개 슬롯은 모두 미실행이며 자체 API 실측을 공식 통과로 바꾸지 않습니다.</p>
+      <details>
+        <summary>41개 미실행 슬롯 보기</summary>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>시험 ID</th><th>실행 상태</th><th>실제 결과</th><th>요청 ID</th><th>확인 시각</th></tr></thead>
+            <tbody id="official-rows"></tbody>
+          </table>
+        </div>
+      </details>
+    </section>
+  </main>
+  <script type="module" src="/ops.mjs"></script>
+</body>
+</html>
