@@ -168,7 +168,7 @@ export async function runAttackChecks(config) {
     ];
   }
 
-  if ([5, 6, 7, 8, 9, 10].includes(config.step)) {
+  if ([5, 6, 7, 8, 9, 10, 11].includes(config.step)) {
     const rootResponse = await fetch(app, {
       redirect: 'error', signal: AbortSignal.timeout(10000),
     });
@@ -241,6 +241,38 @@ export async function runAttackChecks(config) {
           observed: `비로그인 복구 POST HTTP ${restorePost.status}` },
         { attackId: 'restore_get_denied', expected: '복구 경로 GET은 405로 거부',
           observed: `복구 GET HTTP ${restoreGet.status}` },
+      );
+    }
+
+    if (config.step >= 11) {
+      const manifestResponse = await fetch(new URL('/manifest.webmanifest', app), {
+        redirect: 'error', signal: AbortSignal.timeout(10000),
+      });
+      let manifestReady = false;
+      try {
+        const manifest = await manifestResponse.json();
+        manifestReady = manifestResponse.ok
+          && typeof manifest?.name === 'string'
+          && manifest.start_url === '/'
+          && manifest.display === 'standalone';
+      } catch {
+        manifestReady = false;
+      }
+
+      const deviceStatus = await fetch(new URL('/api/device?action=status', app), {
+        redirect: 'error', signal: AbortSignal.timeout(10000),
+      });
+      const offlineResponse = await fetch(new URL('/offline.html', app), {
+        redirect: 'error', signal: AbortSignal.timeout(10000),
+      });
+
+      attempts.push(
+        { attackId: 'pwa_manifest_visible', expected: '설치형 웹앱 manifest가 공개 경로에서 확인됨',
+          observed: manifestReady ? 'manifest 이름·start_url·standalone 설정 확인됨' : `manifest 확인 실패 (HTTP ${manifestResponse.status})` },
+        { attackId: 'device_status_requires_login', expected: '비로그인 기기 상태 요청은 401로 거부',
+          observed: `비로그인 기기 상태 HTTP ${deviceStatus.status}` },
+        { attackId: 'offline_guide_public', expected: '오프라인 안내는 공개하되 보호 자료는 포함하지 않음',
+          observed: `오프라인 안내 HTTP ${offlineResponse.status}` },
       );
     }
 

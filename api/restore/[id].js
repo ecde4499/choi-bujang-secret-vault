@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { createClient } from '@supabase/supabase-js';
 import { restorePrivateNote } from '../../src/recovery.mjs';
+import { verifyDeviceGrant } from '../../src/device-access.mjs';
 import { createLoginVerifier } from '../../src/verify-login.mjs';
 
 const config = JSON.parse(readFileSync(new URL('../../aleph.config.json', import.meta.url), 'utf8'));
@@ -85,6 +86,14 @@ export default async function handler(request, response) {
 
   const principal = await tools.verifyLogin(requestAuthorization(request));
   if (!principal) return response.status(401).json({ error: 'UNAUTHORIZED' });
+
+  const deviceVerified = await verifyDeviceGrant({
+    db: tools.supabase,
+    identity: principal,
+    authorization: requestAuthorization(request),
+    cookieHeader: request.headers?.cookie,
+  });
+  if (!deviceVerified) return response.status(403).json({ error: 'DEVICE_NOT_VERIFIED' });
 
   response.setHeader('X-Resource-Id', `notes:${id}`);
 

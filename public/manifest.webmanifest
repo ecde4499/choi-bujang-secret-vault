@@ -1,0 +1,20 @@
+{
+  "name": "BYTE BACK 안전 자료실",
+  "short_name": "BYTE BACK",
+  "description": "로그인과 서버 기기 승인을 확인한 뒤 보호 자료를 여는 설치형 웹앱",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "lang": "ko",
+  "theme_color": "#101a28",
+  "background_color": "#101a28",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

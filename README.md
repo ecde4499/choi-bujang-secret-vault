@@ -1,6 +1,6 @@
-# BYTE BACK 방어전 — 10단계 백업에서 자료실을 되살립니다
+# BYTE BACK 방어전 — 11단계 나만의 접속 앱을 완성합니다
 
-1~9단계의 로그인·소유자 검사, 서버 함수 경계, 등록 기기·추가 확인·자원 구역·탐지 규칙을 유지하면서 10단계에서는 검증된 9단계 정책 사본과 현재 시험 정책의 차이를 먼저 보여 주고, 확인된 범위만 되돌릴 수 있는 절차와 비공개 가상 메모 한 건 복구 경로를 추가합니다. 실제 운영 정책은 건드리지 않습니다.
+1~10단계의 로그인·소유자 검사, 서버 함수 경계, 판정·탐지·복구 기능을 유지하면서 11단계에서는 같은 배포 주소에 설치형 웹앱 설정과 오프라인 안내를 추가하고, 로그인 뒤에도 서버가 승인한 기기와 현재 WebAuthn 서명을 확인하기 전에는 보호 자료를 열지 않습니다. 앱 설치 표시는 기기 승인으로 취급하지 않으며 별도 접속 프로그램은 만들거나 설치하지 않습니다.
 
 ## 현재 구현
 
@@ -292,6 +292,56 @@ DB 권한 회수는 `docs/STEP5_REVOKE_DIRECT_ACCESS.sql`을 검토한 뒤 Supab
 - GitHub 저장소: `https://github.com/ecde4499/choi-bujang-secret-vault`
 - 배포 주소: `https://choi-bujang-secret-vault-ashy.vercel.app`
 - 로그인 발급자·원본 API 주소·기존 1~9단계 규칙: 유지
+
+
+
+## 11단계 — 나만의 접속 앱을 완성합니다
+
+기존 자료실 화면에 `public/manifest.webmanifest`, 공개 오프라인 안내 `public/offline.html`, 서비스 워커 `public/sw.js`를 추가했습니다. 서비스 워커는 네트워크 탐색이 실패했을 때 공개 오프라인 안내만 보여 주며 API·로그인·메모 응답은 캐시하지 않습니다. 설치 가능/설치형 실행 표시는 화면 정보일 뿐 기기 승인이나 자료 권한의 근거가 아닙니다.
+
+로그인 뒤에는 `GET /api/device?action=status`로 서버의 기기 등록 상태를 확인합니다. `기기 승인 요청`은 WebAuthn 등록을 거친 뒤 `public.vault_device_credentials`에 `pending` 요청 한 건만 만들며 즉시 자료 권한을 주지 않습니다. 화면에 표시된 12자리 요청 코드를 관리자가 Supabase SQL Editor에서 정확한 한 건만 `approved`로 바꿔야 합니다. 모든 pending 요청을 한꺼번에 승인하는 SQL은 사용하지 않습니다.
+
+승인된 행이 있어도 자료실은 바로 열리지 않습니다. `승인 확인하고 자료실 열기`를 누르면 서버가 새 assertion challenge를 발급하고 WebAuthn 인증기가 다시 서명합니다. 서버가 challenge·HTTPS origin·RP ID·사용자 확인 플래그·등록 공개키 서명·카운터·현재 승인 상태를 확인한 뒤에만 15분짜리 HttpOnly 기기 증명 쿠키를 발급합니다. 이 증명은 현재 로그인 세션의 SHA-256과 묶이며 원문 로그인 토큰이나 기기 개인키를 DB나 브라우저 저장소에 넣지 않습니다.
+
+보호 API인 메모 목록/추가, 메모 단건 조회·수정·삭제, 공지 단건 API, 10단계 단건 복구 API는 기존 로그인 검증 뒤 서버의 승인 기기 증명도 다시 확인합니다. 학생 요청에서 기기 증명이 없거나 pending/revoked/만료 상태면 `403 DEVICE_NOT_VERIFIED`로 닫고, 기존 심판 회귀 주체는 기존 경로를 유지합니다. 기기 게이트를 통과한 뒤에도 메모 `owner_id`, 공지 강사/소유자, 복구 사본 소유자 검사는 그대로 다시 적용됩니다.
+
+### 11단계 실제 확인 기록
+
+- `npm run device:test`의 7개 로컬 가상 점검이 모두 통과했습니다. 이는 실제 기기 승인이나 심판 결과가 아닙니다.
+- 같은 시점에 `npm run decider:test` 11개와 `npm run detect:test` 15개 가상 회귀 점검도 모두 통과했습니다.
+- Supabase SQL Editor에서 `docs/STEP11_DEVICE_APPROVAL.sql`을 실행했고 처음에는 승인 요청 행이 없음을 확인했습니다.
+- Windows PC는 사용 가능한 Windows Hello 플랫폼 인증기가 없어 실제 등록을 완료하지 못했습니다. USB 보안키를 별도로 구입하거나 접속 프로그램을 설치하지 않았습니다.
+- 휴대폰의 앱 내장 브라우저에서는 WebAuthn origin이 배포 페이지와 일치하지 않아 서버가 거부했습니다. 휴대폰 Chrome에서 배포 주소를 직접 열어 등록했을 때 화면 잠금 인증 뒤 `pending` 요청이 만들어졌습니다.
+- 화면의 요청 코드 한 건만 SQL로 `approved`로 변경했고 `returning` 결과에서 한 행의 approved 상태와 승인 시각을 사용자 확인했습니다.
+- 승인 뒤 휴대폰 Chrome에서 `승인 확인하고 자료실 열기`를 눌러 지문 인증을 완료하자 서버 기기 확인을 통과했고 기존 본인 메모 목록이 실제로 표시되는 것을 사용자 확인했습니다.
+- 승인 전에는 기존 자료실 영역이 잠긴 상태로 유지됐고, 승인된 기기의 서명 확인이 끝난 뒤에만 메모가 처음 표시됐습니다.
+- 8~10단계에서 확인한 타인 메모 404 등 기존 실제 거부 결과를 이번 단계에서 모두 다시 실측했다고 꾸미지 않습니다. 최종 회귀는 아래 명령과 제출 묶음의 실제 요청 결과로 다시 확인합니다.
+
+### 다시 실행
+
+1. `npm run device:test`로 승인 전 차단·pending 비승인·브라우저 저장소 미사용·PWA 캐시 경계를 확인합니다.
+2. `npm run decider:test`와 `npm run detect:test`로 기존 6~9단계 판정·탐지 가상 회귀를 확인합니다.
+3. `npm run restore:test`와 `npm run policy:diff`로 10단계 복구/정책 사본 경계를 다시 확인합니다.
+4. `npm run build -- --local`로 11단계 정적 배포 자료를 생성합니다.
+5. 실제 배포에서는 로그인 → 기기 승인 요청 → 관리자의 정확한 pending 한 건 승인 → 상태 새로고침 → 승인된 기기 WebAuthn 서명 → 기존 본인 자료실 개방 순서로 확인합니다.
+6. 승인 전 보호 자료는 열리지 않아야 하고, 설치 버튼/설치형 실행 여부만으로 자료가 열리면 실패입니다.
+
+## 11단계 저장점 기록
+
+- 단계: 11
+- 설치형 앱: `public/manifest.webmanifest` + `public/sw.js` + `public/offline.html`
+- 기기 승인 서비스: `GET/POST /api/device`
+- 승인 요청: WebAuthn 등록 후 서버 DB에 `pending`만 생성
+- 실제 승인: 관리자가 정확한 요청 코드 한 건만 `approved`
+- 자료실 개방: 승인된 기기의 새 WebAuthn 서명 + 서버 검증 후에만 허용
+- 브라우저 저장소의 기기 개인키: 사용하지 않음
+- 설치 표시를 승인 근거로 사용: 하지 않음
+- 별도 접속 프로그램: 없음
+- 승인된 실제 휴대폰 Chrome: 지문 확인 뒤 기존 본인 메모 표시 확인
+- 기존 판정 규칙: `device_registered`, `step_up_required`, `resource_scope` 유지
+- GitHub 저장소: `https://github.com/ecde4499/choi-bujang-secret-vault`
+- 배포 주소: `https://choi-bujang-secret-vault-ashy.vercel.app`
+- 로그인 발급자·원본 API·10단계 복구 경계: 유지
 
 
 ## 보너스 xdr-02 — 웹 주입 공격 탐지

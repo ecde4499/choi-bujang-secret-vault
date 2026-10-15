@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 const COOKIE = '__Host-bb_session';
+const DEVICE_COOKIE = '__Host-bb_device';
 
 function authClient() {
   const url = process.env.SUPABASE_URL;
@@ -43,7 +44,9 @@ export default async function handler(request, response) {
   const maxAge = Number.isFinite(data.session.expires_in)
     ? Math.max(1, Math.min(Math.floor(data.session.expires_in), 3600))
     : 3600;
-  response.setHeader('Set-Cookie',
-    `${COOKIE}=${encodeURIComponent(data.session.access_token)}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Lax`);
+  response.setHeader('Set-Cookie', [
+    `${DEVICE_COOKIE}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`,
+    `${COOKIE}=${encodeURIComponent(data.session.access_token)}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Lax`,
+  ]);
   return response.status(200).json({ authenticated: true });
 }
