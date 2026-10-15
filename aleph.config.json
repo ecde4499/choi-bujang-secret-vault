@@ -1,5 +1,5 @@
 {
-  "step": 11,
+  "step": 12,
   "repoUrl": "https://github.com/ecde4499/choi-bujang-secret-vault",
   "publicAppUrl": "https://choi-bujang-secret-vault-ashy.vercel.app",
   "sampleMarker": "SAMPLE_NOTE_1",
@@ -22,7 +22,9 @@
     "PUT /api/notices/:id",
     "POST /api/restore/:id",
     "GET /api/device",
-    "POST /api/device"
+    "POST /api/device",
+    "GET /api/ops",
+    "POST /api/ops"
   ],
   "originalApiUrl": "https://fwkwsmcfbosrnqzsvyxk.supabase.co/rest/v1/notes",
   "restoreRoute": "/api/restore/:id"
