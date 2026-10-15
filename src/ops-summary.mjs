@@ -142,6 +142,7 @@ export function buildOpsOverview({ generatedAt = new Date().toISOString(), devic
       notRun: OFFICIAL_ATTACK_TOTAL,
       slots: official,
     },
+    verificationPlan: verificationPlan(),
   };
 }
 
