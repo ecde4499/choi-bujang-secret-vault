@@ -106,6 +106,7 @@ export async function runAttackChecks(config) {
     const nosniff = rootResponse.headers.get('x-content-type-options')?.toLowerCase() === 'nosniff';
 
     const alephResponse = await fetch(new URL('/aleph.json', app), {
+      headers: { 'x-aleph-attack-id': 'deployment_routes_visible' },
       redirect: 'error', signal: AbortSignal.timeout(10000),
     });
     let alephVisible = false;
@@ -134,6 +135,7 @@ export async function runAttackChecks(config) {
     }
 
     const listResponse = await fetch(new URL('/api/notes', app), {
+      headers: { 'x-aleph-attack-id': 'anonymous_note_list_denied_json' },
       redirect: 'error', signal: AbortSignal.timeout(10000),
     });
     let listJsonError = false;
@@ -157,18 +159,24 @@ export async function runAttackChecks(config) {
       { attackId: 'deployment_identity_visible', expected: '/aleph.json에서 4단계 배포 식별 정보 확인',
         observed: alephVisible ? '4단계 aleph.json 확인됨' : `aleph.json 확인 실패 (HTTP ${alephResponse.status})` },
       { attackId: 'security_header_present', expected: '첫 화면에 X-Content-Type-Options nosniff 존재',
-        observed: nosniff ? '첫 화면 nosniff 헤더 확인됨' : `첫 화면 nosniff 헤더 없음 (HTTP ${rootResponse.status})` },
+        observed: nosniff ? `HTTP ${securityHeaderResponse.status} · 첫 화면 nosniff 헤더 확인됨` : `HTTP ${securityHeaderResponse.status} · 첫 화면 nosniff 헤더 없음` },
       { attackId: 'static_note_removed', expected: '정적 data.json에는 메모 본문이 없음',
         observed: staticEmpty ? '정적 data.json이 빈 자료 상태임' : `정적 data.json 상태를 확인하지 못함 (HTTP ${staticResponse.status})` },
     ];
   }
 
   if ([5, 6, 7, 8, 9, 10, 11, 12].includes(config.step)) {
-    const rootResponse = await fetch(app, {
+    const securityHeaderResponse = await fetch(app, {
+      headers: { 'x-aleph-attack-id': 'security_header_present' },
       redirect: 'error', signal: AbortSignal.timeout(10000),
     });
-    const rootText = await rootResponse.text();
-    const nosniff = rootResponse.headers.get('x-content-type-options')?.toLowerCase() === 'nosniff';
+    const nosniff = securityHeaderResponse.headers.get('x-content-type-options')?.toLowerCase() === 'nosniff';
+
+    const publicKeyResponse = await fetch(app, {
+      headers: { 'x-aleph-attack-id': 'browser_public_key_absent' },
+      redirect: 'error', signal: AbortSignal.timeout(10000),
+    });
+    const rootText = await publicKeyResponse.text();
     const publicKeyAbsent = !/sb_publishable_[A-Za-z0-9_-]+/u.test(rootText)
       && !/SUPABASE_PUBLISHABLE_KEY/u.test(rootText);
 
@@ -203,6 +211,7 @@ export async function runAttackChecks(config) {
     let originalStatus = '미실행';
     try {
       const originalResponse = await fetch(config.originalApiUrl, {
+        headers: { 'x-aleph-attack-id': 'original_api_without_key' },
         redirect: 'error', signal: AbortSignal.timeout(10000),
       });
       originalStatus = `HTTP ${originalResponse.status}`;
@@ -214,18 +223,20 @@ export async function runAttackChecks(config) {
       { attackId: 'anonymous_note_list_denied_json', expected: '비로그인 서버 함수 요청은 401/403 JSON 오류로 거부',
         observed: listJsonError ? `비로그인 목록 요청이 JSON 오류로 거부됨 (HTTP ${listResponse.status})` : `비로그인 목록 거부 형식 불일치 (HTTP ${listResponse.status})` },
       { attackId: 'deployment_routes_visible', expected: `/aleph.json에 ${config.step}단계 allowedRoutes와 originalApiUrl 존재`,
-        observed: alephRoutesVisible ? `${config.step}단계 allowedRoutes와 originalApiUrl 확인됨` : `aleph.json 확인 실패 (HTTP ${alephResponse.status})` },
+        observed: alephRoutesVisible ? `HTTP ${alephResponse.status} · ${config.step}단계 allowedRoutes와 originalApiUrl 확인됨` : `HTTP ${alephResponse.status} · aleph.json 확인 실패` },
       { attackId: 'security_header_present', expected: '첫 화면에 X-Content-Type-Options nosniff 존재',
         observed: nosniff ? '첫 화면 nosniff 헤더 확인됨' : `첫 화면 nosniff 헤더 없음 (HTTP ${rootResponse.status})` },
       { attackId: 'browser_public_key_absent', expected: '첫 화면 코드에 Supabase publishable key 문자열이 없음',
-        observed: publicKeyAbsent ? '첫 화면에서 publishable key 문자열이 보이지 않음' : '첫 화면에서 publishable key 문자열이 발견됨' },
+        observed: publicKeyAbsent ? `HTTP ${publicKeyResponse.status} · 첫 화면에서 publishable key 문자열이 보이지 않음` : `HTTP ${publicKeyResponse.status} · 첫 화면에서 publishable key 문자열이 발견됨` },
       { attackId: 'original_api_without_key', expected: '원본 자료 경로를 키 없이 호출한 실제 결과 기록',
         observed: `원본 자료 경로 직접 요청 ${originalStatus}; anon 키 검사는 심판 확인 대상` },
     ];
 
     if (config.step >= 10) {
       const restoreGet = await fetch(new URL('/api/restore/00000000-0000-4000-8000-000000000000', app), {
-        method: 'GET', redirect: 'error', signal: AbortSignal.timeout(10000),
+        method: 'GET',
+        headers: { 'x-aleph-attack-id': 'restore_get_denied' },
+        redirect: 'error', signal: AbortSignal.timeout(10000),
       });
       attempts.push(
         { attackId: 'anonymous_restore_denied', expected: '비로그인 단건 복구 POST는 401로 거부',
@@ -237,6 +248,7 @@ export async function runAttackChecks(config) {
 
     if (config.step >= 11) {
       const manifestResponse = await fetch(new URL('/manifest.webmanifest', app), {
+        headers: { 'x-aleph-attack-id': 'pwa_manifest_visible' },
         redirect: 'error', signal: AbortSignal.timeout(10000),
       });
       let manifestReady = false;
@@ -251,15 +263,17 @@ export async function runAttackChecks(config) {
       }
 
       const deviceStatus = await fetch(new URL('/api/device?action=status', app), {
+        headers: { 'x-aleph-attack-id': 'device_status_requires_login' },
         redirect: 'error', signal: AbortSignal.timeout(10000),
       });
       const offlineResponse = await fetch(new URL('/offline.html', app), {
+        headers: { 'x-aleph-attack-id': 'offline_guide_public' },
         redirect: 'error', signal: AbortSignal.timeout(10000),
       });
 
       attempts.push(
         { attackId: 'pwa_manifest_visible', expected: '설치형 웹앱 manifest가 공개 경로에서 확인됨',
-          observed: manifestReady ? 'manifest 이름·start_url·standalone 설정 확인됨' : `manifest 확인 실패 (HTTP ${manifestResponse.status})` },
+          observed: manifestReady ? `HTTP ${manifestResponse.status} · manifest 이름·start_url·standalone 설정 확인됨` : `HTTP ${manifestResponse.status} · manifest 확인 실패` },
         { attackId: 'device_status_requires_login', expected: '비로그인 기기 상태 요청은 401로 거부',
           observed: `비로그인 기기 상태 HTTP ${deviceStatus.status}` },
         { attackId: 'offline_guide_public', expected: '오프라인 안내는 공개하되 보호 자료는 포함하지 않음',
@@ -269,9 +283,11 @@ export async function runAttackChecks(config) {
 
     if (config.step >= 12) {
       const opsPage = await fetch(new URL('/ops.html', app), {
+        headers: { 'x-aleph-attack-id': 'ops_room_public_shell' },
         redirect: 'error', signal: AbortSignal.timeout(10000),
       });
       const opsApi = await fetch(new URL('/api/ops', app), {
+        headers: { 'x-aleph-attack-id': 'ops_summary_requires_login' },
         redirect: 'error', signal: AbortSignal.timeout(10000),
       });
       attempts.push(
