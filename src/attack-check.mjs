@@ -1,19 +1,24 @@
 import { randomUUID } from 'node:crypto';
 
 async function trackedFetch(url, attackId, options = {}) {
-  const requestId = randomUUID();
+  const sentRequestId = randomUUID();
   try {
     const response = await fetch(url, {
       ...options,
       headers: {
         ...(options.headers ?? {}),
         'x-aleph-attack-id': attackId,
-        'x-request-id': requestId,
+        'x-request-id': sentRequestId,
       },
     });
+    const requestId = response.headers.get('x-request-id')
+      ?? response.headers.get('x-vercel-id')
+      ?? response.headers.get('sb-request-id')
+      ?? response.headers.get('cf-ray')
+      ?? sentRequestId;
     return { response, requestId };
   } catch (error) {
-    error.requestId = requestId;
+    error.requestId = sentRequestId;
     throw error;
   }
 }
