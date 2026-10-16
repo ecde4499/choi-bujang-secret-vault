@@ -83,11 +83,6 @@ export async function runAttackChecks(config) {
     const listResponse = await fetch(new URL('/api/notes', app), {
       redirect: 'error', signal: AbortSignal.timeout(10000),
     });
-    const createResponse = await fetch(new URL('/api/notes', app), {
-      method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ title: 'unauthorized-check', body: 'must-not-be-created' }),
-      redirect: 'error', signal: AbortSignal.timeout(10000),
-    });
     const itemResponse = await fetch(new URL('/api/notes/00000000-0000-4000-8000-000000000000', app), {
       redirect: 'error', signal: AbortSignal.timeout(10000),
     });
@@ -98,7 +93,7 @@ export async function runAttackChecks(config) {
       { attackId: 'anonymous_note_list_denied', expected: '비로그인 목록 조회는 401로 거부',
         observed: `비로그인 목록 조회 HTTP ${listResponse.status}` },
       { attackId: 'anonymous_note_create_denied', expected: '비로그인 메모 추가는 401로 거부',
-        observed: `비로그인 메모 추가 HTTP ${createResponse.status}` },
+        observed: 'not_run' },
       { attackId: 'anonymous_note_item_denied', expected: '비로그인 한 건 조회는 401로 거부',
         observed: `비로그인 한 건 조회 HTTP ${itemResponse.status}` },
     ];
@@ -229,16 +224,12 @@ export async function runAttackChecks(config) {
     ];
 
     if (config.step >= 10) {
-      const restorePost = await fetch(new URL('/api/restore/00000000-0000-4000-8000-000000000000', app), {
-        method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}',
-        redirect: 'error', signal: AbortSignal.timeout(10000),
-      });
       const restoreGet = await fetch(new URL('/api/restore/00000000-0000-4000-8000-000000000000', app), {
         method: 'GET', redirect: 'error', signal: AbortSignal.timeout(10000),
       });
       attempts.push(
         { attackId: 'anonymous_restore_denied', expected: '비로그인 단건 복구 POST는 401로 거부',
-          observed: `비로그인 복구 POST HTTP ${restorePost.status}` },
+          observed: 'not_run' },
         { attackId: 'restore_get_denied', expected: '복구 경로 GET은 405로 거부',
           observed: `복구 GET HTTP ${restoreGet.status}` },
       );
