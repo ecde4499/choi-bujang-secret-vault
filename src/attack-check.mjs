@@ -106,7 +106,6 @@ export async function runAttackChecks(config) {
     const nosniff = rootResponse.headers.get('x-content-type-options')?.toLowerCase() === 'nosniff';
 
     const alephResponse = await fetch(new URL('/aleph.json', app), {
-      headers: { 'x-aleph-attack-id': 'deployment_routes_visible' },
       redirect: 'error', signal: AbortSignal.timeout(10000),
     });
     let alephVisible = false;
@@ -135,7 +134,6 @@ export async function runAttackChecks(config) {
     }
 
     const listResponse = await fetch(new URL('/api/notes', app), {
-      headers: { 'x-aleph-attack-id': 'anonymous_note_list_denied_json' },
       redirect: 'error', signal: AbortSignal.timeout(10000),
     });
     let listJsonError = false;
@@ -159,7 +157,7 @@ export async function runAttackChecks(config) {
       { attackId: 'deployment_identity_visible', expected: '/aleph.json에서 4단계 배포 식별 정보 확인',
         observed: alephVisible ? '4단계 aleph.json 확인됨' : `aleph.json 확인 실패 (HTTP ${alephResponse.status})` },
       { attackId: 'security_header_present', expected: '첫 화면에 X-Content-Type-Options nosniff 존재',
-        observed: nosniff ? `HTTP ${securityHeaderResponse.status} · 첫 화면 nosniff 헤더 확인됨` : `HTTP ${securityHeaderResponse.status} · 첫 화면 nosniff 헤더 없음` },
+        observed: nosniff ? '첫 화면 nosniff 헤더 확인됨' : `첫 화면 nosniff 헤더 없음 (HTTP ${rootResponse.status})` },
       { attackId: 'static_note_removed', expected: '정적 data.json에는 메모 본문이 없음',
         observed: staticEmpty ? '정적 data.json이 빈 자료 상태임' : `정적 data.json 상태를 확인하지 못함 (HTTP ${staticResponse.status})` },
     ];
@@ -181,6 +179,7 @@ export async function runAttackChecks(config) {
       && !/SUPABASE_PUBLISHABLE_KEY/u.test(rootText);
 
     const alephResponse = await fetch(new URL('/aleph.json', app), {
+      headers: { 'x-aleph-attack-id': 'deployment_routes_visible' },
       redirect: 'error', signal: AbortSignal.timeout(10000),
     });
     let alephRoutesVisible = false;
@@ -197,6 +196,7 @@ export async function runAttackChecks(config) {
     }
 
     const listResponse = await fetch(new URL('/api/notes', app), {
+      headers: { 'x-aleph-attack-id': 'anonymous_note_list_denied_json' },
       redirect: 'error', signal: AbortSignal.timeout(10000),
     });
     let listJsonError = false;
@@ -225,7 +225,7 @@ export async function runAttackChecks(config) {
       { attackId: 'deployment_routes_visible', expected: `/aleph.json에 ${config.step}단계 allowedRoutes와 originalApiUrl 존재`,
         observed: alephRoutesVisible ? `HTTP ${alephResponse.status} · ${config.step}단계 allowedRoutes와 originalApiUrl 확인됨` : `HTTP ${alephResponse.status} · aleph.json 확인 실패` },
       { attackId: 'security_header_present', expected: '첫 화면에 X-Content-Type-Options nosniff 존재',
-        observed: nosniff ? '첫 화면 nosniff 헤더 확인됨' : `첫 화면 nosniff 헤더 없음 (HTTP ${rootResponse.status})` },
+        observed: nosniff ? `HTTP ${securityHeaderResponse.status} · 첫 화면 nosniff 헤더 확인됨` : `HTTP ${securityHeaderResponse.status} · 첫 화면 nosniff 헤더 없음` },
       { attackId: 'browser_public_key_absent', expected: '첫 화면 코드에 Supabase publishable key 문자열이 없음',
         observed: publicKeyAbsent ? `HTTP ${publicKeyResponse.status} · 첫 화면에서 publishable key 문자열이 보이지 않음` : `HTTP ${publicKeyResponse.status} · 첫 화면에서 publishable key 문자열이 발견됨` },
       { attackId: 'original_api_without_key', expected: '원본 자료 경로를 키 없이 호출한 실제 결과 기록',
