@@ -1,5 +1,3 @@
-import { createHash } from 'node:crypto';
-
 async function trackedFetch(url, attackId, options = {}) {
   try {
     const method = options.method ?? 'GET';
@@ -9,13 +7,7 @@ async function trackedFetch(url, attackId, options = {}) {
       headers: { ...(options.headers ?? {}) },
       alephEvidence: { caseId: attackId, requestKey: 'read' },
     });
-    const text = await response.clone().text();
-    const bodyBytes = new TextEncoder().encode(text).byteLength;
-    const urlSha256 = createHash('sha256').update(new URL(url).href).digest('hex');
-    return {
-      response,
-      observed: `HTTP ${response.status}; method=${method}; urlSha256=${urlSha256}; bodyBytes=${bodyBytes}`,
-    };
+    return { response, observed: `HTTP ${response.status}` };
   } catch {
     return { response: null, observed: 'not_run' };
   }
