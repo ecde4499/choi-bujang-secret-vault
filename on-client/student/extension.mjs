@@ -288,6 +288,7 @@ export function createStudentView() {
 
       const clearDetail = () => {
         detail.replaceChildren();
+        detail.removeAttribute('data-student-event-detail');
       };
 
       const showDetail = (event) => {
