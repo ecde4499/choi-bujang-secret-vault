@@ -159,7 +159,225 @@ export function createStudentView() {
 
       return root;
     },
-    renderEvents() { return '학생 구현 대기: 본인 접속·XDR 기록을 연결하세요.'; },
+    renderEvents({ status, mode, data, error }) {
+      const root = document.createElement('section');
+
+      const appendText = (parent, tag, text) => {
+        const node = document.createElement(tag);
+        node.textContent = text;
+        parent.append(node);
+        return node;
+      };
+
+      const modeText = {
+        demo: '예제 자료(demo)',
+        disconnected: '연결 없음(disconnected)',
+        unknown: '확인 불가(unknown)',
+      };
+
+      if (status === 'loading') {
+        appendText(root, 'p', '보안 기록을 불러오는 중입니다.');
+        if (modeText[mode]) appendText(root, 'p', `데이터 연결 상태: ${modeText[mode]}`);
+        return root;
+      }
+
+      if (status === 'error') {
+        const contractMismatch = error?.code === 'CONTRACT_MISMATCH' || error?.code === 'ENGINE_RESULT_UNVERIFIED';
+        appendText(
+          root,
+          'p',
+          contractMismatch
+            ? `기록을 확인할 수 없습니다: ${error?.message || '응답 형식을 확인할 수 없습니다.'}`
+            : `기록을 불러오지 못했습니다: ${error?.message || '요청에 실패했습니다.'}`,
+        );
+        if (modeText[mode]) appendText(root, 'p', `데이터 연결 상태: ${modeText[mode]}`);
+        return root;
+      }
+
+      if (status !== 'ok') {
+        appendText(root, 'p', '보안 기록 상태를 확인할 수 없습니다.');
+        if (modeText[mode]) appendText(root, 'p', `데이터 연결 상태: ${modeText[mode]}`);
+        return root;
+      }
+
+      const events = Array.isArray(data)
+        ? [...data].sort((a, b) => Date.parse(b.at) - Date.parse(a.at))
+        : [];
+
+      if (modeText[mode]) appendText(root, 'p', `데이터 연결 상태: ${modeText[mode]}`);
+
+      if (events.length === 0) {
+        appendText(root, 'p', '표시할 기록이 없습니다.');
+        return root;
+      }
+
+      const kindLabels = {
+        access: '접속 기록(access)',
+        xdr: 'XDR 경보(xdr)',
+      };
+      const accessLabels = {
+        allowed: '허용됨(allowed)',
+        denied: '거부됨(denied)',
+        unknown: '확인 불가(unknown)',
+      };
+      const sessionLabels = {
+        active: '사용 중(active)',
+        expired: '만료(expired)',
+        revoked: '취소(revoked)',
+        unknown: '확인 불가(unknown)',
+      };
+      const deviceLabels = {
+        compliant: '정상(compliant)',
+        noncompliant: '점검 필요(noncompliant)',
+        unknown: '확인 불가(unknown)',
+      };
+
+      const controls = document.createElement('div');
+      const list = document.createElement('ul');
+      const detail = document.createElement('section');
+      const count = document.createElement('p');
+
+      const createFilter = (id, labelText, values, format) => {
+        const wrapper = document.createElement('div');
+        const label = document.createElement('label');
+        const select = document.createElement('select');
+
+        label.setAttribute('for', id);
+        label.textContent = labelText;
+        select.id = id;
+
+        const allOption = document.createElement('option');
+        allOption.value = 'all';
+        allOption.textContent = '전체';
+        select.append(allOption);
+
+        for (const value of values) {
+          const option = document.createElement('option');
+          option.value = value;
+          option.textContent = format(value);
+          select.append(option);
+        }
+
+        wrapper.append(label, select);
+        controls.append(wrapper);
+        return select;
+      };
+
+      const kinds = [...new Set(events.map((event) => event.kind))];
+      const apps = [...new Set(events.map((event) => event.appId).filter((value) => typeof value === 'string'))];
+      const accessStates = [...new Set(events.map((event) => event.state.access))];
+
+      const kindFilter = createFilter(
+        'student-event-kind-filter',
+        '기록 종류',
+        kinds,
+        (value) => kindLabels[value] || value,
+      );
+      const appFilter = createFilter(
+        'student-event-app-filter',
+        '업무 앱',
+        apps,
+        (value) => value,
+      );
+      const accessFilter = createFilter(
+        'student-event-access-filter',
+        '접속 상태',
+        accessStates,
+        (value) => accessLabels[value] || value,
+      );
+
+      const clearDetail = () => {
+        detail.replaceChildren();
+      };
+
+      const showDetail = (event) => {
+        clearDetail();
+        detail.setAttribute('data-student-event-detail', event.id);
+
+        appendText(detail, 'h3', `기록 ${event.id} 상세`);
+        appendText(detail, 'p', `사건 ID: ${event.id}`);
+        appendText(detail, 'p', `업무 앱: ${event.appId || '앱을 확인할 수 없습니다.'}`);
+
+        const evidenceTitle = document.createElement('h4');
+        evidenceTitle.textContent = '근거';
+        detail.append(evidenceTitle);
+        if (event.evidence.length === 0) {
+          appendText(detail, 'p', '근거 없음');
+        } else {
+          const evidenceList = document.createElement('ul');
+          for (const item of event.evidence) {
+            appendText(evidenceList, 'li', `${item.id}: ${item.text}`);
+          }
+          detail.append(evidenceList);
+        }
+
+        const rulesTitle = document.createElement('h4');
+        rulesTitle.textContent = '규칙';
+        detail.append(rulesTitle);
+        if (event.rules.length === 0) {
+          appendText(detail, 'p', '규칙 없음');
+        } else {
+          const rulesList = document.createElement('ul');
+          for (const item of event.rules) {
+            appendText(rulesList, 'li', `${item.id}: ${item.text}`);
+          }
+          detail.append(rulesList);
+        }
+
+        const stateTitle = document.createElement('h4');
+        stateTitle.textContent = '기록 상태';
+        detail.append(stateTitle);
+        appendText(detail, 'p', `접속 상태: ${accessLabels[event.state.access] || `확인 불가(${event.state.access})`}`);
+        appendText(detail, 'p', `세션 상태: ${sessionLabels[event.state.session] || `확인 불가(${event.state.session})`}`);
+        appendText(detail, 'p', `기기 상태: ${deviceLabels[event.state.device] || `확인 불가(${event.state.device})`}`);
+      };
+
+      const renderList = () => {
+        clearDetail();
+        list.replaceChildren();
+
+        const filtered = events.filter((event) => {
+          if (kindFilter.value !== 'all' && event.kind !== kindFilter.value) return false;
+          if (appFilter.value !== 'all' && event.appId !== appFilter.value) return false;
+          if (accessFilter.value !== 'all' && event.state.access !== accessFilter.value) return false;
+          return true;
+        });
+
+        count.textContent = `표시 기록: ${filtered.length}건 / 전체 ${events.length}건`;
+
+        if (filtered.length === 0) {
+          appendText(list, 'li', '현재 필터에 해당하는 기록이 없습니다.');
+          return;
+        }
+
+        for (const event of filtered) {
+          const row = document.createElement('li');
+          row.setAttribute('data-student-event-id', event.id);
+
+          appendText(row, 'p', `사건 ID: ${event.id}`);
+          appendText(row, 'p', `시각: ${event.at} · ${new Date(event.at).toLocaleString('ko-KR')}`);
+          appendText(row, 'p', `종류: ${kindLabels[event.kind] || event.kind}`);
+          appendText(row, 'p', `업무 앱: ${event.appId || '앱을 확인할 수 없습니다.'}`);
+          appendText(row, 'p', `요약: ${event.summary}`);
+
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.textContent = `${event.id} 상세`;
+          button.addEventListener('click', () => showDetail(event));
+          row.append(button);
+
+          list.append(row);
+        }
+      };
+
+      kindFilter.addEventListener('change', renderList);
+      appFilter.addEventListener('change', renderList);
+      accessFilter.addEventListener('change', renderList);
+
+      root.append(controls, count, list, detail);
+      renderList();
+      return root;
+    },
     renderStatus() { return '학생 구현 대기: 기기·세션·알림과 연결 점검 상태를 구분하세요.'; },
     renderVulnerabilities() { return '학생 구현 대기: 정확한 설치 버전·OSV 출처·조회 시각·부분 결과·조회 실패를 구분하세요.'; },
     renderAiConnection() { return '학생 구현 대기: 모델 응답 점검과 실제 사건 설명을 구분하고 AI 오류·취소·수동 복구를 안내하세요.'; },
