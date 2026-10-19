@@ -104,7 +104,61 @@ export function createStudentView() {
 
       return root;
     },
-    renderDecision() { return '학생 구현 대기: 서버의 판정과 이유를 연결하세요.'; },
+    renderDecision({ status, mode, data, error, appId }) {
+      const root = document.createElement('section');
+
+      const appendText = (tag, text) => {
+        const node = document.createElement(tag);
+        node.textContent = text;
+        root.append(node);
+        return node;
+      };
+
+      const modeText = {
+        demo: '예제 자료(demo)',
+        disconnected: '연결 없음(disconnected)',
+        unknown: '확인 불가(unknown)',
+      };
+
+      if (status === 'idle') {
+        appendText('p', '업무 앱을 골라 접속을 요청하세요.');
+      } else if (status === 'loading') {
+        appendText('p', `접속 판정을 확인하는 중입니다.${appId ? ` 대상 앱: ${appId}` : ''}`);
+      } else if (status === 'error') {
+        appendText('p', `요청 실패: ${error?.message || '접속 판정 요청 결과를 확인할 수 없습니다.'}`);
+        appendText('p', '요청 실패는 접근 거부(deny) 판정이 아닙니다.');
+        if (appId) appendText('p', `대상 앱: ${appId}`);
+      } else if (status === 'ok') {
+        const decisionLabels = {
+          allow: '접근 허용(allow)',
+          deny: '접근 거부(deny)',
+          challenge: '추가 인증 또는 확인 필요(challenge)',
+          unknown: '판정 확인 불가(unknown)',
+        };
+        const decision = Object.hasOwn(decisionLabels, data?.decision) ? data.decision : 'unknown';
+
+        appendText('p', `대상 앱: ${data?.appId || appId || '확인 불가'}`);
+        appendText('p', `접근 판정: ${decisionLabels[decision]}`);
+        appendText('p', `판정 이유: ${data?.reason || '이유를 확인할 수 없습니다.'}`);
+        appendText('p', `판정 시각: ${data?.checkedAt || '시각을 확인할 수 없습니다.'}`);
+
+        if (decision === 'allow') {
+          appendText('p', '정책상 접근 허용 판정이며 실제 업무 앱 접속 성공을 보장하지 않습니다.');
+        } else if (decision === 'challenge') {
+          appendText('p', '추가 인증 또는 확인이 필요하며 이 화면이 해당 확인 절차를 대신 수행하지 않습니다.');
+        } else if (decision === 'unknown') {
+          appendText('p', '판정을 확인할 수 없으므로 접근 허용으로 간주하지 않습니다.');
+        }
+      } else {
+        appendText('p', '접속 판정 상태를 확인할 수 없습니다.');
+      }
+
+      if (modeText[mode]) {
+        appendText('p', `데이터 연결 상태: ${modeText[mode]}`);
+      }
+
+      return root;
+    },
     renderEvents() { return '학생 구현 대기: 본인 접속·XDR 기록을 연결하세요.'; },
     renderStatus() { return '학생 구현 대기: 기기·세션·알림과 연결 점검 상태를 구분하세요.'; },
     renderVulnerabilities() { return '학생 구현 대기: 정확한 설치 버전·OSV 출처·조회 시각·부분 결과·조회 실패를 구분하세요.'; },
