@@ -17,9 +17,9 @@
 | Node.js | `package.json`의 `engines.node` = `24.19.0` | 현재 PC에서 `node --version` → `v24.21.0` 직접 확인. 제공 실행 도구는 Node.js 22~24를 허용하고 `v24.19.0`을 수업 기준으로 안내함 |
 | Git | 저장소 갱신·커밋에 사용 | 실제 사용 확인, 버전 번호는 기록하지 않음 |
 | 브라우저 | PC 브라우저 | `http://127.0.0.1:5189/` 직접 접속 확인 |
-| npm 외부 의존성 | `package.json`에 별도 dependencies가 없음 | 소스 확인 |
+| npm 의존성 | `on-client/package.json`에는 별도 `dependencies`가 없음. 저장소 루트에는 `@supabase/supabase-js 2.117.2`, `jose 6.2.12`가 있고 루트 `package-lock.json`으로 고정됨 | 소스 확인 및 22단계 새 폴더에서 루트 `npm.cmd ci` 성공 확인 |
 
-현재 저장소의 `on-client/package-lock.json`은 제출된 `main`에서 확인되지 않았습니다. 20단계 실제 화면도 `PROJECT_NOT_CONFIGURED`를 표시했으므로, 패키지 조회가 구성되었다고 가정하지 않습니다.
+`on-client` 자체의 패키지 의존성이 없다는 사실과 저장소 전체의 루트 의존성은 별개입니다. 새 환경에서는 저장소 루트의 잠금 파일로 `npm.cmd ci`를 수행한 뒤 `on-client`를 실행합니다. 20단계 화면의 `PROJECT_NOT_CONFIGURED`는 OSV 조회 대상 프로젝트 설정 상태이며 npm 설치 성공 여부와 같은 의미가 아닙니다.
 
 ## 3. 실제 작업 위치와 폴더 구조
 
@@ -57,6 +57,16 @@ choi-bujang-secret-vault/
 ```
 
 ## 4. 새 PowerShell에서 실행하기
+
+### 4.0 저장소 루트 의존성 설치
+
+새 clone에서는 먼저 Git 저장소 최상위 폴더에서 루트 잠금 파일 기준으로 설치합니다.
+
+```powershell
+npm.cmd ci
+```
+
+22단계 별도 폴더 재현에서 `added 10 packages`, `audited 11 packages`, `found 0 vulnerabilities`를 직접 확인했습니다. 이 설치 결과는 npm 의존성 설치 상태이며 OSV 패키지 조회 성공을 뜻하지 않습니다.
 
 ### 4.1 앱 폴더에서 PowerShell 열기
 
@@ -283,12 +293,7 @@ flowchart LR
 21·22단계는 현재 워크벤치의 13~20단계용 「포털 제출 준비」와 절차가 다릅니다.
 
 - 학생 문서와 해당 단계 변경을 커밋한 뒤 과제 화면에 저장소 주소와 **실제 40자리 커밋**을 입력합니다.
-- 제출 전 Git 최상위 폴더는 다음 위치입니다.
-
-```text
-D:\Kai_Python\공동방어전\choi-bujang-secret-vault
-```
-
+- 현재 PC에서 사용한 로컬 절대경로는 관찰 기록일 뿐 재현에 필요한 고정 경로가 아닙니다. 다른 환경에서는 저장소를 둔 위치가 달라도 됩니다.
 - Git 최상위와 실제 커밋은 다음 명령으로 확인할 수 있습니다.
 
 ```powershell
@@ -304,14 +309,14 @@ git rev-parse HEAD
 
 ## 13. 지원하지 않거나 아직 확인하지 않은 동작
 
-21단계 로컬 실행 재현은 7절과 11절에 적은 대로 직접 확인을 완료했습니다. 아래 항목만 현재 직접 확인하지 않았습니다.
+21단계 로컬 실행 재현은 7절과 11절에 적은 대로 직접 확인을 완료했습니다. 아래 항목은 현재 직접 확인하지 않았습니다.
 
 - 운영 계정으로 Native host 연결 성공
 - AI 앱 승인 후 `verified` 모델 점검 성공
 - 실제 AI 사건 설명 성공
-- 실제 보안 조치의 prepared → executing → pending → succeeded 전체 흐름
-- 실제 `observation.effectApplied === true` 효과 관측
+- 실제 보안 조치의 prepared → executing → pending → succeeded 전체 흐름과 `observation.effectApplied === true` 효과 관측
 - 실제 설치 패키지의 complete/partial OSV 조회
-- 21·22단계 비공개 원문 전달 도구의 실제 명령
+
+22단계 비공개 원문 전달 도구는 과제 화면에서 받은 `student-source-cli.mjs`를 프로젝트 밖에 두고 사용하는 절차를 확인했습니다. 생성 JSON도 프로젝트 밖에 둡니다. 실제 원문 JSON 생성은 최종 제출 커밋을 확정한 뒤 그 40자리 SHA로 수행합니다.
 
 이 항목들은 운영 설정이나 직접 확인 결과가 생긴 뒤에만 문서의 “확인됨” 상태로 변경합니다.
