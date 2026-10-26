@@ -6,8 +6,12 @@
 
 ## 켜기
 
-검수 환경은 Node.js 24.19.0이며 외부 npm 의존성이 없습니다. 이 폴더의 PowerShell에서 아래를 실행하고 PC 브라우저로 http://127.0.0.1:5189 를 엽니다. 자세한 켜기·끄기·다시 켜기는 docs/STUDENT_LAUNCH_GUIDE.md에 있습니다.
+검수 기준 Node.js는 24.19.0입니다. `on-client/package.json` 자체에는 별도 `dependencies`가 없지만, 이 저장소의 제공 서버가 사용하는 외부 패키지 `@supabase/supabase-js` `2.117.2`와 `jose` `6.2.12`는 **저장소 루트 `package.json`과 `package-lock.json`에서 관리**합니다. 새 환경에서는 저장소 루트에서 `npm.cmd ci`로 잠금 파일 기준 의존성을 설치한 뒤 `on-client` 폴더로 이동해 실행합니다. 자세한 설치·켜기·끄기·다시 켜기는 `docs/STUDENT_RUNBOOK.md`와 `docs/STUDENT_LAUNCH_GUIDE.md`에 있습니다.
 
+    # 저장소 루트에서 먼저
+    npm.cmd ci
+
+    # 그 다음 on-client 폴더에서
     powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\start-alekov.ps1
 
 npm start도 같은 서버를 켭니다. 기본 실행은 실제 회사 시스템(기존 엔진)에 연결되지 않은 상태입니다. npm run demo는 예제 자료로 화면을 보여 줄 뿐이며 실제 연결이나 성취가 아닙니다. npm run check는 student/extension.mjs의 문법만 확인합니다.
