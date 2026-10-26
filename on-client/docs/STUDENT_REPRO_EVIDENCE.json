@@ -1,0 +1,37 @@
+{
+  "schema": "bugberry.stage22.head-bound-reproduction.v1",
+  "repoUrl": "https://github.com/ecde4499/choi-bujang-secret-vault.git",
+  "branch": "main",
+  "observedCommitAtRecording": "ff91a9a53da2578d78d36f4f2cc17c259a6ea11b",
+  "observedCommitNote": "This 40-character SHA was actually packaged with the official student-source-cli and submitted before this final documentation correction. It is historical evidence, not the final submission SHA.",
+  "sourceBundleAtRecording": {
+    "commit": "ff91a9a53da2578d78d36f4f2cc17c259a6ea11b",
+    "sha256": "11c96105704ebe120aa6d049bc4572d7fbaa92d71765b7fd76d506b9a534afeb",
+    "bytes": 531199
+  },
+  "testedCommit": "HEAD",
+  "commitment": {
+    "targetRef": "HEAD",
+    "resolveCommand": "git rev-parse HEAD",
+    "checkoutCommand": "git checkout --detach <portal-40-character-SHA>",
+    "shaMustMatchPortal": true,
+    "sourceBundleCommitMustMatchPortal": true,
+    "rule": "Before submission, the stage22 reproduction folder must checkout the exact 40-character SHA entered in the portal. git rev-parse HEAD and the official source JSON commit field must both equal that SHA."
+  },
+  "environment": {
+    "os": "Windows",
+    "nodeObserved": "v24.21.0",
+    "nodeProjectBaseline": "v24.19.0",
+    "appVersion": "0.2.11"
+  },
+  "studentObservation": {
+    "at": "2026-10-26 14:09:27 +09:00",
+    "homepage": "Previously verified stage 13-20 display results remained unchanged during the submission-preparation session.",
+    "baseConnection": "disconnected",
+    "stage17": "NATIVE_HOST_DISABLED / unavailable",
+    "stage18": "actual AI event explanation unverified",
+    "stage19": "idle display verified; actual execution/effect unverified",
+    "stage20": "PROJECT_NOT_CONFIGURED / not_configured display verified; actual OSV complete/partial result unverified"
+  },
+  "submissionAttestation": "This evidence is valid for the submitted HEAD only after the student pulls the final documentation commit, checks out that exact 40-character SHA in the separate stage22 folder, verifies git rev-parse HEAD equality, and reruns the documented syntax/start/browser/stop/restart checks before submitting. Do not reuse an earlier commit's source JSON."
+}
