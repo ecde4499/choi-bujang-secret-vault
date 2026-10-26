@@ -805,6 +805,175 @@ export function createStudentView() {
       appendText(root, 'p', 'AI 설명과 제안만으로 보안 조치는 실행되지 않습니다.');
       return root;
     },
-    renderAction() { return '학생 구현 대기: 현재 사건·조치·실제 대상·사람 확인·ACK와 원천 효과·unknown을 구분하세요.'; },
+    renderAction({ status, event, actionId, target, receipt, observation, message, confirmationExpiresAt, error }) {
+      const root = document.createElement('section');
+
+      const appendText = (tag, text) => {
+        const node = document.createElement(tag);
+        node.textContent = text;
+        root.append(node);
+        return node;
+      };
+
+      const eventId = event?.id || null;
+      const evidenceIds = Array.isArray(event?.evidence)
+        ? event.evidence.map((item) => item.id).filter((id) => typeof id === 'string')
+        : [];
+
+      const receiptMatchesCurrentIntent =
+        !receipt
+        || (
+          (!receipt.eventId || !eventId || receipt.eventId === eventId)
+          && (!receipt.actionId || !actionId || receipt.actionId === actionId)
+        );
+
+      const observedSuccess =
+        status === 'succeeded'
+        && receiptMatchesCurrentIntent
+        && observation?.effectApplied === true
+        && typeof observation?.observedAt === 'string'
+        && typeof receipt?.receiptId === 'string';
+
+      const attachBinding = () => {
+        if (eventId) root.setAttribute('data-student-action-event', eventId);
+        if (receipt?.requestId) root.setAttribute('data-student-action-request', receipt.requestId);
+      };
+
+      const appendCurrentBinding = () => {
+        if (eventId) appendText('p', `사건 ID: ${eventId}`);
+        if (evidenceIds.length > 0) appendText('p', `근거 ID: ${evidenceIds.join(', ')}`);
+        if (actionId) appendText('p', `조치 ID: ${actionId}`);
+        if (target?.id) appendText('p', `실제 대상 ID: ${target.id}`);
+        if (Number.isSafeInteger(target?.generation)) appendText('p', `대상 generation: ${target.generation}`);
+        if (receipt?.requestId) appendText('p', `requestId: ${receipt.requestId}`);
+        if (receipt?.receiptId) appendText('p', `receiptId: ${receipt.receiptId}`);
+        if (Number.isSafeInteger(receipt?.version)) appendText('p', `version: ${receipt.version}`);
+        if (typeof receipt?.replayed === 'boolean') {
+          appendText(
+            'p',
+            receipt.replayed
+              ? 'replayed: true · 기존 요청의 영수증이 재사용된 상태이며 이것만으로 새 효과나 성공을 뜻하지 않습니다.'
+              : 'replayed: false · 새 준비 응답이며 아직 실행 성공을 뜻하지 않습니다.',
+          );
+        }
+      };
+
+      if (!receiptMatchesCurrentIntent) {
+        appendText('p', '조치 결과 불명(unknown): 받은 영수증의 사건 또는 조치가 현재 선택과 일치하지 않습니다.');
+        appendText('p', '성공이나 효과 없음으로 판단하지 말고 제공 화면에서 현재 사건의 결과만 다시 확인하세요.');
+        appendCurrentBinding();
+        return root;
+      }
+
+      if (status === 'idle') {
+        appendText('p', '아직 미실행(idle) 상태입니다.');
+        appendText('p', message || '조치 제안은 아직 실행되지 않았습니다.');
+        appendText('p', '실제 기록에 지원 조치가 없으면 조치 준비 버튼이 나오지 않는 것이 정상입니다.');
+        return root;
+      }
+
+      if (status === 'loading') {
+        attachBinding();
+        appendText(
+          'p',
+          message?.includes('결과')
+            ? '연동 시스템 결과를 조회하는 중(loading)입니다. 아직 결과가 확인되지 않았습니다.'
+            : '조치를 준비하는 중(loading)입니다. 아직 실행되지 않았습니다.',
+        );
+        appendCurrentBinding();
+        return root;
+      }
+
+      if (status === 'prepared') {
+        attachBinding();
+        appendText('p', '준비됨·미실행(prepared) 상태입니다.');
+        appendText('p', '실제 대상과 조치가 준비됐지만 사람이 확인해 제공 화면의 집행 버튼을 누르기 전에는 실행되지 않습니다.');
+        if (confirmationExpiresAt) appendText('p', `사람 확인 기한: ${confirmationExpiresAt}`);
+        appendCurrentBinding();
+        return root;
+      }
+
+      if (status === 'executing') {
+        attachBinding();
+        appendText('p', '서버에 전달 중(executing)입니다.');
+        appendText('p', '사람 확인 뒤 조치 요청을 전송하는 중이며 아직 서버 결과나 실제 효과가 확인되지 않았습니다.');
+        appendCurrentBinding();
+        return root;
+      }
+
+      if (status === 'pending') {
+        attachBinding();
+        appendText('p', '서버 접수·처리 중(pending)입니다.');
+        appendText('p', '서버가 요청을 받았다는 ACK 상태일 뿐 실행 성공이나 실제 효과 확인을 뜻하지 않습니다.');
+        appendCurrentBinding();
+        return root;
+      }
+
+      if (status === 'succeeded') {
+        attachBinding();
+        if (observedSuccess) {
+          appendText('p', '효과 확인(succeeded) 상태입니다.');
+          appendText('p', `관측 시각: ${observation.observedAt}`);
+          appendText('p', 'effectApplied: true');
+          appendText('p', `receiptId: ${receipt.receiptId}`);
+          appendText('p', '연동 시스템이 실제 효과를 관측한 경우에만 이 상태를 효과 확인으로 표시합니다.');
+        } else {
+          appendText('p', '결과 불명(unknown): succeeded 상태라도 실제 효과 관측 조건을 확인할 수 없습니다.');
+          appendText('p', 'observation.effectApplied === true와 관측 시각·receiptId가 모두 확인되지 않으면 성공으로 판단하지 않습니다.');
+          appendText('p', '제공 화면의 「연동 시스템 결과만 재조회」로 결과만 다시 확인하세요.');
+        }
+        appendCurrentBinding();
+        return root;
+      }
+
+      if (status === 'denied') {
+        attachBinding();
+        appendText('p', '연동 시스템이 조치를 거절했습니다(denied).');
+        appendText('p', message || error?.message || '현재 정책에서 조치가 허용되지 않았습니다.');
+        appendCurrentBinding();
+        return root;
+      }
+
+      if (status === 'failed') {
+        attachBinding();
+        appendText('p', '연동 시스템의 조치 처리가 실패했습니다(failed).');
+        appendText('p', message || error?.message || '조치 처리 결과가 실패로 확인됐습니다.');
+        appendCurrentBinding();
+        return root;
+      }
+
+      if (status === 'unknown') {
+        attachBinding();
+        appendText('p', '결과 불명(unknown) 상태입니다.');
+        appendText('p', message || error?.message || '이미 전달된 조치의 최종 효과를 확인할 수 없습니다.');
+        appendText('p', '성공으로도 효과 없음으로도 판단하지 말고 제공 화면의 「연동 시스템 결과만 재조회」로 결과만 직접 확인하세요.');
+        appendCurrentBinding();
+        return root;
+      }
+
+      if (status === 'expired') {
+        attachBinding();
+        appendText('p', '확인 기한 지남(expired) 상태입니다.');
+        appendText('p', '이번 준비 정보로는 집행하지 말고 현재 사건에서 조치를 다시 준비해야 합니다.');
+        if (confirmationExpiresAt) appendText('p', `지난 확인 기한: ${confirmationExpiresAt}`);
+        appendCurrentBinding();
+        return root;
+      }
+
+      if (status === 'error') {
+        attachBinding();
+        appendText('p', '요청 처리 안 됨(error) 상태입니다.');
+        appendText('p', `오류 코드: ${error?.code || 'ACTION_RESULT_UNVERIFIED'}`);
+        appendText('p', `오류 메시지: ${error?.message || message || '조치 요청 상태를 확인할 수 없습니다.'}`);
+        appendText('p', '이 오류를 조치 성공이나 효과 없음으로 해석하지 않습니다.');
+        appendCurrentBinding();
+        return root;
+      }
+
+      appendText('p', `조치 상태를 확인할 수 없습니다: ${status || 'unknown'}`);
+      appendText('p', '성공으로 간주하지 말고 제공 화면에서 현재 결과를 다시 확인하세요.');
+      appendCurrentBinding();
+      return root;
+    },
   };
 }
