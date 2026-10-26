@@ -82,7 +82,13 @@ node --version
 npm run check
 ```
 
-현재까지 실제 개발 환경에서는 이 명령이 성공했고 다음 스크립트가 실행되는 것을 확인했습니다.
+현재 PC의 PowerShell에서는 실행 정책 때문에 `npm.ps1`이 차단되는 것을 직접 확인했습니다. 전역 실행 정책을 바꾸지 않고 아래처럼 Windows 명령 래퍼를 사용합니다.
+
+```powershell
+npm.cmd run check
+```
+
+Git Bash에서는 기존처럼 `npm run check`를 사용할 수 있습니다. 현재까지 실제 개발 환경에서는 학생 파일 문법 검사가 성공했고 다음 스크립트가 실행되는 것을 확인했습니다.
 
 ```text
 node --check student/extension.mjs
@@ -222,6 +228,7 @@ flowchart LR
 
 | 화면/코드 | 의미 | 확인 순서와 복구 |
 |---|---|---|
+| PowerShell에서 `npm.ps1` 실행 정책 오류 | PowerShell이 Node 설치의 `npm.ps1` 래퍼를 차단 | 전역 실행 정책을 변경하지 않고 `npm.cmd run check` 사용 |
 | 브라우저가 `127.0.0.1:5189`에 연결되지 않음 | 로컬 서버 미실행 또는 포트 문제 | 실행 PowerShell 확인 → 서버가 꺼졌으면 같은 명령으로 재실행 → 포트 충돌이면 `-Port 5190` 등 제공 옵션 사용 |
 | `NATIVE_HOST_DISABLED` | 계정 연결용 Native host가 준비되지 않음 | 학생 코드 수정이나 API 키 입력 금지 → 담당자가 `NativeHostConfig`를 제공했는지 확인 → 없으면 실제 AI 연결은 미확인으로 유지 |
 | AI 점검 timeout/rate limit/cancel | 연결 결과를 확정할 수 없음 | 자동 재시도하지 않고 제공 화면의 점검 버튼으로 사용자가 직접 다시 확인 |
@@ -246,7 +253,7 @@ flowchart LR
 기존 작업을 보존한 상태에서 새 PowerShell을 열어 아래 순서로 확인합니다.
 
 1. `on-client` 폴더에서 `node --version`을 실행해 실제 버전을 기록합니다.
-2. `npm run check`가 오류 없이 끝나는지 확인합니다.
+2. PowerShell에서 `npm.cmd run check`를 실행해 오류 없이 끝나는지 확인합니다. (`npm run check`는 현재 PC에서 `npm.ps1` 실행 정책 오류가 확인됨)
 3. `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\start-alekov.ps1`를 실행합니다.
 4. 출력된 브라우저 주소를 직접 열고 보호 현황이 표시되는지 확인합니다.
 5. `Ctrl+C`로 종료하고 같은 명령으로 다시 실행해 재실행되는지 확인합니다.
