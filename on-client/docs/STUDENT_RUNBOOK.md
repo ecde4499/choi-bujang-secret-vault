@@ -161,27 +161,35 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\start-alekov.ps1 -Po
 
 ```mermaid
 flowchart LR
-    B[PC 브라우저\n127.0.0.1:5189] -->|화면 조회·사용자 버튼| S[로컬 앱 서버\nsrc/server.mjs]
+    subgraph B["PC 브라우저 · http://127.0.0.1:5189/"]
+        P["제공 화면 로직\npublic/app.js"]
+        U["학생 표시 로직\nstudent/extension.mjs"]
+        P -->|"브라우저에서 학생 모듈 import·호출"| U
+    end
 
-    S --> P[제공 앱 로직\npublic/app.js]
-    P --> U[학생 표시 로직\nstudent/extension.mjs]
+    S["로컬 앱 서버\nsrc/server.mjs"]
 
-    S -->|선택적 SdpHostConfig| X[접근 제어 / XDR 연동 시스템]
-    S -->|선택적 NativeHostConfig + 앱 승인| A[수업용 AI 게이트웨이]
-    S -->|승인된 공개 패키지만| O[OSV API\nhttps://api.osv.dev/v1/querybatch]
+    S -->|"HTML·JS·CSS 정적 파일 응답"| B
+    P -->|"/api/* 요청"| S
 
-    X -. 현재 개인 연결 설정 미제공 .-> S
-    A -. 현재 NativeHostConfig 미제공 .-> S
+    S -->|"선택적 SdpHostConfig"| X["접근 제어 / XDR 연동 시스템"]
+    S -->|"선택적 NativeHostConfig + 앱 승인"| A["수업용 AI 게이트웨이"]
+    S -->|"승인된 공개 패키지만 조회"| O["OSV API\nhttps://api.osv.dev/v1/querybatch"]
+
+    X -. "현재 개인 연결 설정 미제공" .-> S
+    A -. "현재 NativeHostConfig 미제공" .-> S
 ```
 
 관계 설명:
 
-- 브라우저는 로컬 앱 서버 `127.0.0.1`에만 직접 요청합니다.
-- `public/app.js`는 제공 코드이며 로딩·취소·세대 변경·접근 판정·AI 설명·조치 요청·패키지 조회 상태를 관리합니다.
-- `student/extension.mjs`는 제공 코드가 전달한 안전한 입력을 DOM으로 표시합니다.
-- 실제 접근 제어/XDR 연결은 담당자가 제공하는 `SdpHostConfig`가 필요한 별도 경로입니다.
-- 실제 계정/AI 앱 연결은 담당자가 제공하는 `NativeHostConfig`와 승인 절차가 필요한 별도 경로입니다.
-- OSV 조회는 서버가 승인한 공개 패키지에 한해 수행합니다. 학생이 임의로 패키지 이름이나 회사 내부 패키지를 외부로 전송하지 않습니다.
+- `src/server.mjs`는 `public/app.js`, `student/extension.mjs` 등 화면 파일을 브라우저에 응답하고 `/api/*` 요청을 처리합니다. 서버가 이 브라우저 JavaScript를 직접 실행하는 구조가 아닙니다.
+- `public/app.js`와 `student/extension.mjs`는 모두 브라우저에서 실행됩니다. 제공 화면 코드인 `public/app.js`가 학생 모듈을 import하고 학생 표시 함수를 호출합니다.
+- 브라우저의 `public/app.js`가 같은 로컬 원점의 `/api/*`를 통해 `src/server.mjs`와 통신합니다.
+- `public/app.js`는 로딩·취소·세대 변경·접근 판정·AI 설명·조치 요청·패키지 조회 상태를 관리합니다.
+- `student/extension.mjs`는 제공 코드가 전달한 안전한 입력을 DOM으로 표시하며 외부 연동을 직접 수행하지 않습니다.
+- 실제 접근 제어/XDR 연결은 로컬 앱 서버가 담당자가 제공하는 `SdpHostConfig`를 통해 사용하는 선택 경로입니다.
+- 실제 계정/AI 앱 연결은 로컬 앱 서버가 담당자가 제공하는 `NativeHostConfig`와 승인 절차를 통해 사용하는 선택 경로입니다.
+- OSV 조회는 로컬 앱 서버가 승인한 공개 패키지에 한해 수행합니다. 학생이 임의로 패키지 이름이나 회사 내부 패키지를 외부로 전송하지 않습니다.
 - 비밀 설정값·토큰·비밀번호·API 키는 이 문서와 저장소에 기록하지 않습니다.
 
 ## 6. 제공 코드와 학생 작성 코드 경계
