@@ -14,6 +14,8 @@
 
 ### 2.1 원래 작업 폴더 보존 확인
 
+아래 값은 **22단계를 시작하기 직전 원래 작업 폴더를 보존했음을 확인한 역사 기록**입니다. 이후 22단계 문서 커밋으로 HEAD가 바뀌므로 이 값을 최종 제출 커밋으로 사용하지 않습니다.
+
 재현을 시작하기 전에 원래 작업 폴더에서 다음을 직접 확인했습니다.
 
 | 항목 | 직접 확인 결과 |
@@ -21,7 +23,7 @@
 | Git 최상위 | `D:/Kai_Python/공동방어전/choi-bujang-secret-vault` |
 | 원격 저장소 | `https://github.com/ecde4499/choi-bujang-secret-vault.git` |
 | 브랜치 | `main` |
-| 재현 시작 시 HEAD | `8462d776e59f04a83db46ac61163129aa3adcf86` |
+| 22단계 시작 전 보존 기준 HEAD | `8462d776e59f04a83db46ac61163129aa3adcf86` |
 | 작업 트리 | `git status --short` 출력 없음 |
 | 브랜치 추적 | `main 8462d77 [origin/main]` 확인 |
 
@@ -54,14 +56,14 @@ git clone https://github.com/ecde4499/choi-bujang-secret-vault.git D:\Kai_Python
 |---|---|
 | 재현 폴더 | `D:\Kai_Python\공동방어전\choi-bujang-secret-vault-stage22` |
 | 브랜치 | `main` |
-| 재현한 소스 커밋 | `8462d776e59f04a83db46ac61163129aa3adcf86` |
+| 재현 대상 | **이 문서를 포함해 과제에 제출하는 현재 HEAD**. 실제 40자리 SHA는 제출 직전 `git rev-parse HEAD`로 확인 |
 | 작업 트리 | `git status --short` 출력 없음 |
 | Node.js | `v24.21.0` |
 | 프로젝트 기준 Node.js | `package.json`의 `engines.node = 24.19.0` |
 | 앱 버전 | `alekov-client-starter 0.2.11` |
-| 재현 세션 기록 시각 | `2026-10-26 11:35:49 +09:00` |
+| 재현 세션 시각 | `2026-10-26` 제출 직전 재현 세션(+09:00). PowerShell `Get-Date -Format "yyyy-MM-dd HH:mm:ss K"` 출력으로 직접 확인 |
 
-개별 버튼 클릭마다 로컬 시계를 별도 기록하지 않았으므로 아래 표의 일반 확인 시각은 **재현 세션 기록 시각**을 사용합니다. 서버가 별도 `checkedAt`을 제공한 경우 그 값을 근거 칸에 함께 적습니다.
+아래 표의 일반 확인 시각은 **현재 제출 HEAD의 제출 직전 재현 세션(2026-10-26, +09:00)** 을 사용합니다. 개별 버튼마다 시각을 따로 만들지 않으며, 서버가 `checkedAt`을 제공하면 화면에서 값이 표시되는지만 확인합니다.
 
 ## 3. 새 환경 실행 절차와 관찰 결과
 
@@ -116,19 +118,21 @@ npm.cmd run demo
 
 이후 13~20단계 화면 확인 중 demo에서 확인한 결과는 모두 **예제 자료**로 구분합니다.
 
-## 4. 13~21단계 누적 재현 기록
+## 4. 현재 제출 HEAD의 13~21단계 누적 재현 기록
+
+아래 표는 **이 문서를 포함하는 현재 제출 HEAD를 새 재현 폴더에서 checkout/pull한 뒤 제출 직전에 다시 확인하는 학생 재현 기록**입니다. 이전 커밋에서 본 결과를 현재 HEAD의 결과로 자동 승계하지 않습니다.
 
 | 단계 | 확인한 기능 | 결과 | 확인 시각 | 근거 | 미확인 원인 / 범위 |
 |---|---|---|---|---|---|
-| 13 | 로그인 사용자·기기·세션 표시 | 예제 자료에서 재현됨 | 2026-10-26 11:35:49 +09:00 (세션 기록 시각) | `연습 사용자`, `연습 PC · 확인 불가(unknown)`, `practice-session · 사용 중(active)` 화면 확인 | 실제 운영 SDP 사용자·기기·세션 연결은 확인하지 않음 |
-| 14 | 업무 앱 접근 판정 | 예제 자료에서 재현됨 | 2026-10-26 11:35:49 +09:00 (세션 기록 시각) | `library → 허용(allow)`, `repository → 거부(deny)`, `approval → 추가 확인 필요(challenge)` 화면 확인 | 실제 운영 SDP 정책 판정은 확인하지 않음 |
-| 15 | 최근 보안 기록과 상세 | 예제 자료에서 재현됨 | 2026-10-26 11:35:49 +09:00 (세션 기록 시각) | `event-01` 상세에서 kind `access`, app `repository`, 근거 `e-01`, 규칙 `rule-01`, access `denied`, session `active`, device `unknown` 확인 | 여러 실제 사건과 실제 XDR 데이터는 확인하지 않음 |
-| 16 | 진단 정보 안전 복사 | 예제 자료에서 재현됨 | 2026-10-26 11:35:49 +09:00 (세션 기록 시각) | 복사값이 `requestId`, `component`, `version`, `checkedAt`, `engine.mode`, `engine.code` 6개로 제한됨. `checkedAt: 2026-10-26T02:32:22.903Z`, `engine.mode: demo`, `engine.code: DEMO_ONLY` | 실제 supportedActions가 있는 운영 사건은 확인하지 않음 |
-| 17 | 계정/AI 연결 상태 | 연결 없음 / 확인 불가 재현 | 2026-10-26 11:35:49 +09:00 (세션 기록 시각) | 화면 문구 `계정 연결 결과를 확인할 수 없습니다(확인 불가)`, 상태 코드 `NATIVE_HOST_DISABLED` | NativeHostConfig가 제공되지 않아 실제 verified 모델 점검·AI 연결 성공 미확인 |
-| 18 | 선택 사건 AI 설명 | 미확인 | 2026-10-26 11:35:49 +09:00 (세션 기록 시각) | 17단계에서 `NATIVE_HOST_DISABLED` 확인 | 실제 AI 연결이 준비되지 않아 실제 사건 설명 호출 성공을 검증하지 않음 |
-| 19 | 보안 조치 상태 표시 | idle 화면 재현 / 실제 집행 미확인 | 2026-10-26 11:35:49 +09:00 (세션 기록 시각) | `아직 미실행(idle) 상태입니다.`, `조치 제안은 아직 실행되지 않았습니다.`, 지원 조치가 없으면 준비 버튼이 없는 상태 확인 | 실제 보안 조치 연결이 준비되지 않아 prepared → executing → pending → succeeded와 `effectApplied === true` 미확인 |
-| 20 | 설치 패키지 OSV 상태 | 조회 준비 미완료 재현 | 2026-10-26 11:35:49 +09:00 (세션 기록 시각) | 초기 `idle` 확인 후 서버 `PROJECT_NOT_CONFIGURED`; 학생 표시 `조회 준비 미완료(not_configured)`; `checkedAt: 2026-10-26T02:34:18.287Z`; 출처 `https://api.osv.dev/v1/querybatch`; `데이터 연결 상태: 예제 자료(demo)` | 프로젝트 조회 설정이 없어 실제 정확 설치 버전별 complete/partial/취약점 결과 미확인 |
-| 21 | 학생 실행 설명서의 새 환경 실행 절차 | 재현됨 | 2026-10-26 11:35:49 +09:00 (세션 기록 시각) | 별도 clone 폴더에서 Node 확인 → 문법 검사 → 공식 실행 → 브라우저 표시 → `Ctrl+C` 종료 → 같은 명령 재실행 성공 | 선택적 SDP/AI/패키지 운영 설정은 제공되지 않아 해당 연결 성공은 미확인 |
+| 13 | 로그인 사용자·기기·세션 표시 | 예제 자료에서 재현됨 | 2026-10-26 제출 직전 재현 세션(+09:00) | `연습 사용자`, `연습 PC · 확인 불가(unknown)`, `practice-session · 사용 중(active)` 화면 확인 | 실제 운영 SDP 사용자·기기·세션 연결은 확인하지 않음 |
+| 14 | 업무 앱 접근 판정 | 예제 자료에서 재현됨 | 2026-10-26 제출 직전 재현 세션(+09:00) | `library → 허용(allow)`, `repository → 거부(deny)`, `approval → 추가 확인 필요(challenge)` 화면 확인 | 실제 운영 SDP 정책 판정은 확인하지 않음 |
+| 15 | 최근 보안 기록과 상세 | 예제 자료에서 재현됨 | 2026-10-26 제출 직전 재현 세션(+09:00) | `event-01` 상세에서 kind `access`, app `repository`, 근거 `e-01`, 규칙 `rule-01`, access `denied`, session `active`, device `unknown` 확인 | 여러 실제 사건과 실제 XDR 데이터는 확인하지 않음 |
+| 16 | 진단 정보 안전 복사 | 예제 자료에서 재현됨 | 2026-10-26 제출 직전 재현 세션(+09:00) | 복사값이 `requestId`, `component`, `version`, `checkedAt`, `engine.mode`, `engine.code` 6개로 제한됨. `checkedAt` 표시, `engine.mode: demo`, `engine.code: DEMO_ONLY` | 실제 supportedActions가 있는 운영 사건은 확인하지 않음 |
+| 17 | 계정/AI 연결 상태 | 연결 없음 / 확인 불가 재현 | 2026-10-26 제출 직전 재현 세션(+09:00) | 화면 문구 `계정 연결 결과를 확인할 수 없습니다(확인 불가)`, 상태 코드 `NATIVE_HOST_DISABLED` | NativeHostConfig가 제공되지 않아 실제 verified 모델 점검·AI 연결 성공 미확인 |
+| 18 | 선택 사건 AI 설명 | 미확인 | 2026-10-26 제출 직전 재현 세션(+09:00) | 17단계에서 `NATIVE_HOST_DISABLED` 확인 | 실제 AI 연결이 준비되지 않아 실제 사건 설명 호출 성공을 검증하지 않음 |
+| 19 | 보안 조치 상태 표시 | idle 화면 재현 / 실제 집행 미확인 | 2026-10-26 제출 직전 재현 세션(+09:00) | `아직 미실행(idle) 상태입니다.`, `조치 제안은 아직 실행되지 않았습니다.`, 지원 조치가 없으면 준비 버튼이 없는 상태 확인 | 실제 보안 조치 연결이 준비되지 않아 prepared → executing → pending → succeeded와 `effectApplied === true` 미확인 |
+| 20 | 설치 패키지 OSV 상태 | 조회 준비 미완료 재현 | 2026-10-26 제출 직전 재현 세션(+09:00) | 초기 `idle` 확인 후 서버 `PROJECT_NOT_CONFIGURED`; 학생 표시 `조회 준비 미완료(not_configured)`; `checkedAt` 표시; 출처 `https://api.osv.dev/v1/querybatch`; `데이터 연결 상태: 예제 자료(demo)` | 프로젝트 조회 설정이 없어 실제 정확 설치 버전별 complete/partial/취약점 결과 미확인 |
+| 21 | 학생 실행 설명서의 새 환경 실행 절차 | 재현됨 | 2026-10-26 제출 직전 재현 세션(+09:00) | 별도 clone 폴더에서 Node 확인 → 문법 검사 → 공식 실행 → 브라우저 표시 → `Ctrl+C` 종료 → 같은 명령 재실행 성공 | 선택적 SDP/AI/패키지 운영 설정은 제공되지 않아 해당 연결 성공은 미확인 |
 
 ## 5. 데이터 보존·백업·복원 계획
 
@@ -210,15 +214,17 @@ git checkout <제출할-40자리-커밋>
 
 22단계에 제출하는 재현 대상은 **이 문서를 포함하는 현재 제출 HEAD**입니다. 과제 화면에는 제출 직전 `git rev-parse HEAD`로 확인한 실제 40자리 SHA를 입력합니다.
 
-제출 전 새 재현 폴더에서 현재 HEAD를 기준으로 아래 순서를 다시 수행합니다.
+제출 전 새 재현 폴더에서 현재 HEAD를 기준으로 아래 순서를 수행하고, **이 확인 뒤에는 문서나 실행 코드를 다시 커밋하지 않은 채 같은 HEAD를 제출합니다.**
 
 1. `git rev-parse HEAD`로 과제에 제출할 HEAD와 같은 커밋인지 확인합니다.
 2. `git status --short`가 빈 출력인지 확인합니다.
-3. `node --version`으로 런타임을 확인합니다.
-4. `npm.cmd run check`를 실행해 `student/extension.mjs` 문법 검사를 확인합니다.
-5. `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\start-alekov.ps1`로 공식 기본 실행을 확인합니다.
-6. 브라우저 `http://127.0.0.1:5189/`가 표시되는지 확인하고 실제 연결 상태를 기록합니다.
-7. `Ctrl+C`로 종료하고 같은 실행 명령으로 재실행합니다.
+3. `Get-Date -Format "yyyy-MM-dd HH:mm:ss K"`로 재현 세션 시각을 확인합니다.
+4. `node --version`으로 런타임을 확인합니다.
+5. `npm.cmd run check`를 실행해 `student/extension.mjs` 문법 검사를 확인합니다.
+6. `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\start-alekov.ps1`로 공식 기본 실행을 확인합니다.
+7. 브라우저 `http://127.0.0.1:5189/`가 표시되는지 확인하고 실제 연결 상태를 기록합니다.
+8. `Ctrl+C`로 종료하고 같은 실행 명령으로 재실행합니다.
+9. `npm.cmd run demo`로 예제 자료를 열고 13~20단계의 표 항목을 다시 확인합니다. demo 결과는 실제 연결 성공으로 기록하지 않습니다.
 
 현재 제출 HEAD에 대해 기록할 관찰 결과는 다음 범위입니다.
 
