@@ -296,7 +296,7 @@ git rev-parse HEAD
 
 ## 13. 지원하지 않거나 아직 확인하지 않은 동작
 
-다음 항목은 현재 직접 확인하지 않았습니다.
+21단계 로컬 실행 재현은 7절과 11절에 적은 대로 직접 확인을 완료했습니다. 아래 항목만 현재 직접 확인하지 않았습니다.
 
 - 운영 계정으로 Native host 연결 성공
 - AI 앱 승인 후 `verified` 모델 점검 성공
@@ -304,7 +304,6 @@ git rev-parse HEAD
 - 실제 보안 조치의 prepared → executing → pending → succeeded 전체 흐름
 - 실제 `observation.effectApplied === true` 효과 관측
 - 실제 설치 패키지의 complete/partial OSV 조회
-- 새 PowerShell에서 Node.js `v24.21.0` 확인, `npm.cmd run check` 성공, 공식 `start-alekov.ps1` 실행 성공, 브라우저 화면 표시 및 기본 `연결 없음` 상태, `Ctrl+C` 종료 후 같은 명령으로 재실행 성공까지 직접 확인
 - 21·22단계 비공개 원문 전달 도구의 실제 명령
 
 이 항목들은 운영 설정이나 직접 확인 결과가 생긴 뒤에만 문서의 “확인됨” 상태로 변경합니다.
