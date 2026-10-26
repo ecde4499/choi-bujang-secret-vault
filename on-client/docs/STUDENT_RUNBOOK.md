@@ -17,9 +17,9 @@
 | Node.js | `package.json`의 `engines.node` = `24.19.0` | 현재 PC에서 `node --version` → `v24.21.0` 직접 확인. 제공 실행 도구는 Node.js 22~24를 허용하고 `v24.19.0`을 수업 기준으로 안내함 |
 | Git | 저장소 갱신·커밋에 사용 | 실제 사용 확인, 버전 번호는 기록하지 않음 |
 | 브라우저 | PC 브라우저 | `http://127.0.0.1:5189/` 직접 접속 확인 |
-| npm 외부 의존성 | `package.json`에 별도 dependencies가 없음 | 소스 확인 |
+| npm 외부 의존성 | 저장소 루트 `package.json`에 `@supabase/supabase-js` `2.117.2`, `jose` `6.2.12`가 있으며 루트 `package-lock.json`으로 잠겨 있음 | 소스 확인 |
 
-현재 저장소의 `on-client/package-lock.json`은 제출된 `main`에서 확인되지 않았습니다. 20단계 실제 화면도 `PROJECT_NOT_CONFIGURED`를 표시했으므로, 패키지 조회가 구성되었다고 가정하지 않습니다.
+`on-client/package.json`에는 별도 `dependencies`와 `package-lock.json`이 없지만, 제공 서버가 사용하는 외부 패키지는 **저장소 루트**에서 관리합니다. 새 환경에서는 저장소 루트의 `package-lock.json`을 기준으로 먼저 `npm ci`를 실행한 뒤 `on-client` 실행 절차로 이동합니다. 20단계의 `PROJECT_NOT_CONFIGURED`는 OSV 조회 대상 설정 상태이며 npm 의존성 설치 여부와 같은 뜻이 아닙니다.
 
 ## 3. 실제 작업 위치와 폴더 구조
 
@@ -58,6 +58,31 @@ choi-bujang-secret-vault/
 
 ## 4. 새 PowerShell에서 실행하기
 
+### 4.0 새 환경 의존성 설치
+
+새로 clone한 폴더에서는 먼저 **저장소 최상위 폴더**에서 루트 `package-lock.json` 기준으로 외부 의존성을 설치합니다.
+
+```powershell
+cd <저장소-최상위-폴더>
+npm.cmd ci
+```
+
+설치 대상은 루트 `package.json`에 고정된 다음 패키지를 포함합니다.
+
+```text
+@supabase/supabase-js 2.117.2
+jose 6.2.12
+```
+
+PowerShell 실행 정책 때문에 `npm.ps1`이 차단되는 환경에서는 전역 정책을 변경하지 않고 `npm.cmd ci`를 사용합니다. `node_modules/`는 Git에 커밋하지 않으며 새 환경에서 위 명령으로 다시 설치합니다.
+
+설치가 끝나면 앱 폴더로 이동합니다.
+
+```powershell
+cd on-client
+```
+
+이후 4.1부터의 Node 확인·문법 검사·공식 실행 절차를 따릅니다.
 ### 4.1 앱 폴더에서 PowerShell 열기
 
 파일 탐색기에서 다음 폴더를 엽니다.
