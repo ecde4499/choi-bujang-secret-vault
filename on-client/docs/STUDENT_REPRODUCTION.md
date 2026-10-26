@@ -12,24 +12,26 @@
 
 ## 2. 재현 기준 원문과 환경
 
-### 2.0 현재 제출 기준으로 확인한 재현 소스
+### 2.0 현재 제출 재현 기준과 40자리 이력
 
-공식 22단계 안내의 “제출할 저장소 URL·브랜치·40자리 커밋 해시를 먼저 기록” 요구에 따라, 현재 재현 기준을 다음과 같이 확정합니다.
+공식 22단계 안내의 저장소·브랜치·40자리 commit 기록 요구와 최종 제출본 결속을 다음과 같이 구분합니다.
 
-| 항목 | 현재 확인 값 |
+| 항목 | 기록 |
 |---|---|
 | 저장소 URL | `https://github.com/ecde4499/choi-bujang-secret-vault.git` |
 | 브랜치 | `main` |
-| 현재 재현 기준 commit | 과제 제출 화면의 40자리 SHA와 원문 전달 JSON의 `commit` 값이 동일한 **현재 제출 commit** |
-| 현재 재현 확인 시각 | `2026-10-26 14:09:27 +09:00` |
+| 직전 실제 원문 묶음·제출 SHA | `ff91a9a53da2578d78d36f4f2cc17c259a6ea11b` |
+| 직전 원문 JSON SHA-256 | `11c96105704ebe120aa6d049bc4572d7fbaa92d71765b7fd76d506b9a534afeb` |
+| 최종 제출 재현 대상 | **평가 대상 `HEAD`**. 제출 직전 `git rev-parse HEAD`로 40자리 SHA를 읽고, 과제 화면 SHA와 원문 JSON `commit` 값이 모두 같아야 함 |
+| 학생 관찰 시각 | `2026-10-26 14:09:27 +09:00` |
 | 실제 Node.js | `v24.21.0` |
-| 수업·프로젝트 기준 Node.js | `v24.19.0` |
+| 프로젝트 기준 Node.js | `v24.19.0` |
 | 앱 버전 | `0.2.11` |
 | 새 환경 의존성 설치 | 저장소 루트에서 `npm.cmd ci` 성공: 10 packages added, 11 packages audited, 0 vulnerabilities |
-| 홈페이지 상태 | 앞서 직접 확인한 13~20단계 표시 결과와 동일하게 유지됨을 현재 제출 준비 세션에서 확인 |
+| 홈페이지 상태 | 앞서 직접 확인한 13~20단계 표시 결과가 계속 동일하게 유지됨을 학생이 확인 |
 | 미확인 범위 | 실제 Native host/AI 연결, 실제 AI 사건 설명, 실제 보안 조치 집행·효과, 실제 OSV complete/partial 조회 |
 
-이전 재현 commit 이후 현재 **현재 제출 commit**까지의 변경 파일을 Git 비교로 확인한 결과, 실행 코드가 아니라 `on-client/docs/STUDENT_REPRODUCTION.md`와 `on-client/docs/STUDENT_RUNBOOK.md` 두 문서만 변경되었습니다. 따라서 학생 화면과 실행 코드의 상태값은 기존 직접 확인 결과와 동일하며, 현재 제출 준비 세션에서도 홈페이지 표시 결과가 그대로 유지됨을 확인했습니다.
+`ff91a9a53da2578d78d36f4f2cc17c259a6ea11b`는 실제로 공식 `student-source-cli.mjs --commit`으로 원문 JSON을 만든 40자리 이력입니다. **이 값 자체를 이후 문서 수정으로 생기는 최종 제출 SHA라고 주장하지 않습니다.** 최종 제출본은 [STUDENT_REPRO_EVIDENCE.json](STUDENT_REPRO_EVIDENCE.json)의 `testedCommit: "HEAD"` 규칙에 따라 제출 직전에 정확한 40자리 `HEAD`를 checkout하여 결속합니다.
 ### 2.1 원래 작업 폴더 보존 확인
 
 아래 값은 **22단계를 시작하기 직전 원래 작업 폴더를 보존했음을 확인한 역사 기록**입니다. 이후 22단계 문서 커밋으로 HEAD가 바뀌므로 이 값을 최종 제출 커밋으로 사용하지 않습니다.
@@ -47,18 +49,19 @@
 
 원래 작업 폴더는 삭제·초기화하지 않았고, 재현용 폴더를 별도로 만들었습니다.
 
-### 2.2 커밋 기록 해석
+### 2.2 최종 commit 결속 규칙
 
-현재 재현 기준은 **과제 제출 화면에 입력하는 40자리 commit SHA**와 공식 `student-source-cli.mjs`로 만든 원문 JSON의 **`commit` 값**이 동일한 제출본입니다.
+Git commit SHA는 커밋된 문서 내용까지 포함해 계산되므로, 문서를 수정하면서 그 수정으로 생성될 자기 SHA를 같은 문서에 미리 하드코딩할 수 없습니다. 따라서 이 기록은 **실제 40자리 실측 이력**과 **최종 평가 HEAD**를 분리해 기록합니다.
 
-- 재현 기록의 `현재 제출 commit`은 위 두 값으로 식별합니다.
-- 원문 JSON은 프로젝트 밖에서 만들고 `--commit <제출할-40자리-SHA>`를 지정합니다.
-- JSON 생성 결과의 `commit` 값과 과제 제출 화면의 commit 값이 다르면 제출하지 않습니다.
-- 이전 단계나 이전 제출의 SHA를 현재 재현 기준으로 사용하지 않습니다.
-- 이 문서의 단계별 관찰 결과와 미확인 범위는 **현재 제출 commit의 재현 기록**으로 사용합니다.
+- 실제 40자리 실측 이력: `ff91a9a53da2578d78d36f4f2cc17c259a6ea11b`
+- 최종 평가 대상: `HEAD`
+- 최종 40자리 값 확인: `git rev-parse HEAD`
+- 새 재현 폴더 고정: `git checkout --detach <과제 화면에 제출할 40자리 SHA>`
+- 일치 조건: checkout 뒤 `git rev-parse HEAD` = 과제 화면 SHA = 원문 JSON의 `commit` 값
+- 위 셋 중 하나라도 다르면 제출하지 않고 다시 맞춥니다.
 
-이 방식은 커밋된 원문만 묶는 공식 원문 전달 도구의 계약과 맞추기 위한 것입니다. 서버 AI가 직접 실행했다고 주장하지 않으며, 학생이 확인한 결과만 기록합니다.
-### 2.3 새 재현 폴더
+세부 결속 정보는 `docs/STUDENT_REPRO_EVIDENCE.json`에 기록합니다. 이 규칙은 이전 SHA의 결과를 이름만 바꿔 현재 결과로 주장하기 위한 것이 아니라, **문서 커밋이 만들어진 뒤 그 최종 HEAD를 새 재현 폴더에서 실제로 다시 checkout하여 확인하기 위한 절차**입니다.
+### 2.3 새 재현 폴더에서 최종 40자리 SHA checkout
 
 새 폴더는 다음 clone 명령으로 만들었습니다.
 
@@ -66,21 +69,21 @@
 git clone https://github.com/ecde4499/choi-bujang-secret-vault.git D:\Kai_Python\공동방어전\choi-bujang-secret-vault-stage22
 ```
 
-새 폴더에서 직접 확인한 값:
+최종 제출 직전에는 **과제 화면에 넣을 실제 40자리 SHA**를 `$FINAL_COMMIT`에 넣고 그 버전을 명시적으로 checkout합니다.
 
-| 항목 | 직접 확인 결과 |
-|---|---|
-| 재현 폴더 | `D:\Kai_Python\공동방어전\choi-bujang-secret-vault-stage22` |
-| 브랜치 | `main` |
-| 재현 대상 | **현재 제출 commit** |
-| 작업 트리 | `git status --short` 출력 없음 |
-| Node.js | `v24.21.0` |
-| 프로젝트 기준 Node.js | `package.json`의 `engines.node = 24.19.0` |
-| 앱 버전 | `alekov-client-starter 0.2.11` |
-| 재현 세션 시각 | `2026-10-26 14:09:27 +09:00` 현재 제출 준비 확인 세션 |
+```powershell
+cd D:\Kai_Python\공동방어전\choi-bujang-secret-vault-stage22
+$FINAL_COMMIT = '<과제 화면에 제출할 실제 40자리 SHA>'
+git fetch origin main
+git checkout --detach $FINAL_COMMIT
+$OBSERVED = (git rev-parse HEAD).Trim()
+if ($OBSERVED -ne $FINAL_COMMIT) { throw "재현 HEAD가 제출 SHA와 다릅니다." }
+git status --short
+```
 
-아래 표의 일반 확인 시각은 **현재 재현 기준 **현재 제출 commit**의 확인 세션(`2026-10-26 14:09:27 +09:00`)** 을 사용합니다. 서버가 `checkedAt`을 제공하는 항목은 화면에서 값이 표시되는지만 확인합니다.
+`git status --short`는 빈 출력이어야 합니다. 그 다음 저장소 루트에서 `npm.cmd ci`, `on-client`에서 Node 확인·문법 검사·공식 실행·브라우저 표시·종료·재실행·demo 구분을 다시 확인합니다. **이 최종 HEAD 확인 뒤에는 문서나 실행 코드를 다시 커밋하지 않고 같은 SHA를 제출합니다.**
 
+재현 환경은 Windows, Node.js `v24.21.0`, 앱 버전 `0.2.11`입니다. 프로젝트의 선언 기준 Node.js는 `v24.19.0`이며 실제 관찰 버전과 지원 선언을 같은 뜻으로 쓰지 않습니다.
 ## 3. 새 환경 실행 절차와 관찰 결과
 
 21단계 학생 실행 설명서 `docs/STUDENT_RUNBOOK.md`의 절차를 새 재현 폴더에서 따랐습니다.
@@ -134,9 +137,9 @@ npm.cmd run demo
 
 이후 13~20단계 화면 확인 중 demo에서 확인한 결과는 모두 **예제 자료**로 구분합니다.
 
-## 4. 현재 제출 commit 기준 13~21단계 누적 재현 기록
+## 4. 최종 평가 HEAD 기준 13~21단계 누적 재현 기록
 
-아래 표는 **과제 제출 화면의 40자리 SHA와 원문 JSON의 `commit` 값이 동일한 현재 제출 commit**의 학생 재현 기록입니다. 확인 시각은 `2026-10-26 14:09:27 +09:00`이며, 기존에 직접 확인한 홈페이지 상태값이 그대로 유지됨을 제출 준비 세션에서 확인했습니다. demo 결과와 실제 연결 결과는 계속 구분합니다.
+아래 표의 학생 관찰값은 `2026-10-26 14:09:27 +09:00`에 확인한 결과이며, 최종 제출 시에는 2.3의 절차로 **평가 대상 HEAD를 정확한 40자리 SHA로 checkout한 뒤 같은 상태가 유지되는지 다시 확인하고 그 HEAD를 그대로 제출**합니다. demo 결과와 실제 연결 결과는 계속 구분합니다.
 
 | 단계 | 확인한 기능 | 결과 | 확인 시각 | 근거 | 미확인 원인 / 범위 |
 |---|---|---|---|---|---|
@@ -238,28 +241,31 @@ git checkout <제출할-40자리-커밋>
 
 22단계 원문 검토를 통과하더라도 이는 **현재 제출 원문의 문서·코드·학생 재현 기록이 서로 일관된다는 수료 판정**이며, 실제 운영 인증이나 v1.0 자동 인증으로 표현하지 않습니다.
 
-## 7. 현재 제출 기준 재현 기록
+## 7. 최종 제출 HEAD 결속 기록
 
-현재 재현 기준은 **과제 제출 화면과 원문 JSON이 동일하게 가리키는 현재 제출 commit**입니다.
+현재 재현 기록은 [STUDENT_REPRO_EVIDENCE.json](STUDENT_REPRO_EVIDENCE.json)과 함께 해석합니다.
 
 | 확인 항목 | 현재 기록 |
 |---|---|
 | 저장소/브랜치 | `https://github.com/ecde4499/choi-bujang-secret-vault.git` / `main` |
-| 40자리 SHA | 과제 제출 화면의 값과 원문 JSON `commit` 값이 동일한지 제출 직전에 확인 |
-| 확인 시각 | `2026-10-26 14:09:27 +09:00` |
+| 실제 40자리 이력 | `ff91a9a53da2578d78d36f4f2cc17c259a6ea11b` — 공식 원문 JSON 생성·제출에 사용한 직전 SHA |
+| 최종 제출 SHA | 문서 커밋 생성 뒤 `git rev-parse HEAD`로 읽은 **평가 대상 HEAD 40자리 값** |
+| 필수 checkout | `git checkout --detach <최종 제출 40자리 SHA>` |
+| 일치 검증 | checkout 후 `git rev-parse HEAD` = 과제 화면 SHA = 공식 원문 JSON `commit` |
+| 학생 관찰 시각 | `2026-10-26 14:09:27 +09:00` |
 | Node.js | `v24.21.0` |
 | 앱 버전 | `0.2.11` |
-| 새 환경 설치 | 저장소 루트에서 `npm.cmd ci` 성공, 10 packages added, 11 packages audited, 0 vulnerabilities |
-| 실행 코드 변경 여부 | `c6118be...` 이후 현재 SHA까지 실행 코드는 변경되지 않았고 학생 재현·실행 문서만 변경 |
-| 홈페이지 | 기존에 직접 확인한 13~20단계 상태값과 동일한 표시가 유지됨을 현재 제출 준비 세션에서 확인 |
+| 새 환경 설치 | 저장소 루트 `npm.cmd ci` 성공: 10 packages added, 11 packages audited, 0 vulnerabilities |
+| 홈페이지 | 기존에 직접 확인한 13~20단계 상태값이 동일하게 유지됨 |
 | 기본 연결 상태 | `연결 없음` |
-| 17단계 | `NATIVE_HOST_DISABLED` / 확인 불가 상태 유지 |
+| 17단계 | `NATIVE_HOST_DISABLED` / 확인 불가 상태 |
 | 18단계 | 실제 AI 사건 설명 미확인 |
 | 19단계 | idle 표시 정상, 실제 조치 집행·효과 미확인 |
-| 20단계 | `PROJECT_NOT_CONFIGURED` / `조회 준비 미완료(not_configured)` 상태 유지, 실제 OSV 결과 미확인 |
-| 원문 전달 도구 | `student-source-cli.mjs --commit <제출할-40자리-SHA>`로 프로젝트 밖 JSON을 생성하고, 출력 `commit` 값이 제출 화면의 SHA와 동일한지 확인 |
+| 20단계 | `PROJECT_NOT_CONFIGURED` / `조회 준비 미완료(not_configured)` 상태, 실제 OSV 결과 미확인 |
 
-이 기록은 학생이 현재 제출 준비 과정에서 확인한 재현 진술입니다. 서버 AI가 명령을 실행하거나 새 환경에서 직접 재현했다고 표현하지 않습니다. 실제 연결이 준비되지 않은 항목은 이전과 동일하게 미확인으로 유지합니다.
+**제출 게이트:** 이 문서가 포함된 최종 커밋을 받은 뒤 별도 stage22 폴더에서 그 40자리 SHA를 `git checkout --detach`하고 `git rev-parse HEAD` 일치를 확인한 다음, 문법 검사·공식 실행·브라우저 표시·종료·재실행을 다시 확인합니다. 그 뒤에는 새 커밋을 만들지 않고 바로 같은 SHA로 원문 JSON을 생성해 제출합니다.
+
+서버 AI가 이 명령을 실행했다고 표현하지 않습니다. 실제 연결이 준비되지 않은 항목은 미확인으로 유지합니다.
 ## 8. 아직 미확인인 항목
 
 - 운영 계정으로 Native host 연결 성공
