@@ -14,7 +14,7 @@
 |---|---|---|
 | OS | Windows | 실제 사용 환경 |
 | PowerShell | Windows PowerShell에서 실행 | 실제 버전 번호는 아직 기록하지 않음 |
-| Node.js | `package.json`의 `engines.node` = `24.19.0` | 프로젝트 요구 버전 확인. 현재 PC의 `node --version` 출력은 21단계 직접 확인 전까지 미확인 |
+| Node.js | `package.json`의 `engines.node` = `24.19.0` | 현재 PC에서 `node --version` → `v24.21.0` 직접 확인. 제공 실행 도구는 Node.js 22~24를 허용하고 `v24.19.0`을 수업 기준으로 안내함 |
 | Git | 저장소 갱신·커밋에 사용 | 실제 사용 확인, 버전 번호는 기록하지 않음 |
 | 브라우저 | PC 브라우저 | `http://127.0.0.1:5189/` 직접 접속 확인 |
 | npm 외부 의존성 | `package.json`에 별도 dependencies가 없음 | 소스 확인 |
@@ -74,7 +74,7 @@ D:\Kai_Python\공동방어전\choi-bujang-secret-vault\on-client
 node --version
 ```
 
-프로젝트 요구 버전은 `v24.19.0`입니다. 다른 버전이 출력되면 성공으로 가정하지 않고 실행 도구의 안내를 확인합니다.
+프로젝트의 수업 기준 버전은 `v24.19.0`입니다. 21단계 직접 확인에서 현재 PC는 `v24.21.0`이었습니다. 제공 실행 도구는 Node.js 22~24를 실행 허용 범위로 두고, 정확히 `v24.19.0`이 아니면 참고 안내를 출력합니다.
 
 ### 4.2 학생 파일 문법 확인
 
@@ -288,7 +288,7 @@ git rev-parse HEAD
 - 실제 보안 조치의 prepared → executing → pending → succeeded 전체 흐름
 - 실제 `observation.effectApplied === true` 효과 관측
 - 실제 설치 패키지의 complete/partial OSV 조회
-- 새 PowerShell에서 공식 `start-alekov.ps1` 절차를 21단계 기준으로 재검증한 결과
+- 새 PowerShell에서 Node.js `v24.21.0` 확인 완료. 공식 `start-alekov.ps1` 실행·종료·재실행 결과는 아직 미확인
 - 21·22단계 비공개 원문 전달 도구의 실제 명령
 
 이 항목들은 운영 설정이나 직접 확인 결과가 생긴 뒤에만 문서의 “확인됨” 상태로 변경합니다.
