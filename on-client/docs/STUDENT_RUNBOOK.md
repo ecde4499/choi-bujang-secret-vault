@@ -253,7 +253,7 @@ flowchart LR
 기존 작업을 보존한 상태에서 새 PowerShell을 열어 아래 순서로 확인합니다.
 
 1. `on-client` 폴더에서 `node --version`을 실행해 실제 버전을 기록합니다.
-2. PowerShell에서 `npm.cmd run check`를 실행해 오류 없이 끝나는지 확인합니다. (`npm run check`는 현재 PC에서 `npm.ps1` 실행 정책 오류가 확인됨)
+2. PowerShell에서 `npm.cmd run check`를 실행해 `node --check student/extension.mjs`가 오류 없이 끝나는 것을 직접 확인했습니다. (`npm run check`는 현재 PC에서 `npm.ps1` 실행 정책 오류가 확인됨)
 3. `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\start-alekov.ps1`를 실행합니다.
 4. 출력된 브라우저 주소를 직접 열고 보호 현황이 표시되는지 확인합니다.
 5. `Ctrl+C`로 종료하고 같은 명령으로 다시 실행해 재실행되는지 확인합니다.
@@ -295,7 +295,7 @@ git rev-parse HEAD
 - 실제 보안 조치의 prepared → executing → pending → succeeded 전체 흐름
 - 실제 `observation.effectApplied === true` 효과 관측
 - 실제 설치 패키지의 complete/partial OSV 조회
-- 새 PowerShell에서 Node.js `v24.21.0` 확인 완료. 공식 `start-alekov.ps1` 실행·종료·재실행 결과는 아직 미확인
+- 새 PowerShell에서 Node.js `v24.21.0` 확인 및 `npm.cmd run check` 성공 확인 완료. 공식 `start-alekov.ps1` 실행·종료·재실행 결과는 아직 미확인
 - 21·22단계 비공개 원문 전달 도구의 실제 명령
 
 이 항목들은 운영 설정이나 직접 확인 결과가 생긴 뒤에만 문서의 “확인됨” 상태로 변경합니다.
