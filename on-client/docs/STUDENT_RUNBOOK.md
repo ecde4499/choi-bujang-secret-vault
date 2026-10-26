@@ -304,7 +304,7 @@ git rev-parse HEAD
 - 실제 보안 조치의 prepared → executing → pending → succeeded 전체 흐름
 - 실제 `observation.effectApplied === true` 효과 관측
 - 실제 설치 패키지의 complete/partial OSV 조회
-- 새 PowerShell에서 Node.js `v24.21.0` 확인, `npm.cmd run check` 성공, 공식 `start-alekov.ps1` 실행 성공, 브라우저 화면 표시 및 기본 `연결 없음` 상태까지 직접 확인. 종료·재실행은 아직 미확인
+- 새 PowerShell에서 Node.js `v24.21.0` 확인, `npm.cmd run check` 성공, 공식 `start-alekov.ps1` 실행 성공, 브라우저 화면 표시 및 기본 `연결 없음` 상태, `Ctrl+C` 종료 후 같은 명령으로 재실행 성공까지 직접 확인
 - 21·22단계 비공개 원문 전달 도구의 실제 명령
 
 이 항목들은 운영 설정이나 직접 확인 결과가 생긴 뒤에만 문서의 “확인됨” 상태로 변경합니다.
