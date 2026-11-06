@@ -460,3 +460,20 @@ DB 권한 회수는 `docs/STEP5_REVOKE_DIRECT_ACCESS.sql`을 검토한 뒤 Supab
 - 결과 파일: `xdr/known-cve/result.json`
 - 저장점 커밋 메시지: `보너스 xdr-03 저장점`
 
+
+## 보너스 xdr-04 — 몰래 심어진 프로그램 탐지
+
+- 원본 경보: `xdr/fixtures/persistence.json` (수정하지 않음, 가상 Wazuh 경보 24건)
+- 읽기 모듈: `xdr/persistence/read-alerts.mjs` — 시각·출발 주소·계정·규칙 수준·설명만 추출하고 비밀값처럼 보이는 문자열은 가림
+- 패턴 근거: MITRE ATT&CK T1543(시스템 프로세스 생성·변경), T1053(예약 작업)
+- 주요 신호: 서명 없는 새 서비스 등록·변경, 낯선 예약 작업, 시작 폴더/시작 프로그램 변경
+- 판정 모듈: `xdr/persistence/decide.mjs` — import·파일 I/O·외부 호출 없이 `decide(alert)`만으로 block/alert/record 판단
+- 응답 연결: `xdr/persistence/respond.mjs` — 명확한 block 후보만 1시간 만료·근거 경보 번호가 붙은 임시 deny 규칙으로 만들고 block/alert 알림은 `xdr/alerts.log`에 한 줄씩 추가
+- 기존 ZTNA 판정기: `src/decider.mjs`의 `device_registered`, `step_up_required`, `resource_scope` 규칙은 변경하지 않음
+- 읽기 확인: 경보 24건 / 출력 24줄
+- 실행 명령: `npm run xdr:run -- persistence`
+- 실제 가상 경보 실행 결과: block 8 / alert 8 / record 8
+- 정상 이벤트 block: 0건
+- 결과 파일: `xdr/persistence/result.json`
+- 저장점 커밋 메시지: `보너스 xdr-04 저장점`
+

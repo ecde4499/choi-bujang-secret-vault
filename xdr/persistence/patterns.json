@@ -1,0 +1,27 @@
+{
+  "schema": "aleph.xdr.patterns.v1",
+  "moduleKey": "persistence",
+  "thresholds": { "block": 0.85, "alert": 0.5 },
+  "patterns": [
+    {
+      "name": "unsigned_service_registration",
+      "condition": "T1543 경보에서 규칙 수준이 높고, 서명 없는 새 서비스 등록·서비스 실행 파일 변경·반복 등록이 임시 경로 또는 반복 횟수와 함께 나타남",
+      "evidence": "MITRE ATT&CK T1543은 시스템 서비스 같은 프로세스를 생성·변경해 지속성을 확보하는 기법을 다루므로 서명 없는 새 서비스 등록과 변경은 강한 지속성 신호다."
+    },
+    {
+      "name": "unfamiliar_scheduled_task",
+      "condition": "T1053 경보에서 규칙 수준이 높고, 처음 보는 예약 작업·임의 이름 작업·수업 시간 밖 작업이 임시 폴더 실행 파일을 호출함",
+      "evidence": "MITRE ATT&CK T1053은 예약 작업을 이용해 프로그램을 반복 실행하거나 지속성을 확보하는 기법을 다루므로 낯선 예약 작업과 임시 실행 경로의 결합은 강한 신호다."
+    },
+    {
+      "name": "startup_folder_change",
+      "condition": "T1543 경보에서 규칙 수준이 높고, 시작 폴더 또는 시작 프로그램에 평소 목록에 없던 실행 파일이 추가·변경됨",
+      "evidence": "MITRE ATT&CK T1543의 시스템 프로세스 생성·변경 관점에서 재시작 뒤에도 실행되도록 등록되는 시작 항목 변화는 지속성 확보 여부를 점검해야 하는 신호다."
+    },
+    {
+      "name": "persistence_change_needs_review",
+      "condition": "T1543 또는 T1053 표시는 있으나 위 강한 신호가 충분하지 않은 서비스·예약 작업·시작 항목 변경은 차단하지 않고 추가 확인함",
+      "evidence": "MITRE ATT&CK T1543과 T1053은 정상 관리 작업과도 겹칠 수 있으므로 강한 악성 징후가 부족한 변화는 차단보다 추가 확인이 적절하다."
+    }
+  ]
+}
