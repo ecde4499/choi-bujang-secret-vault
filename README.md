@@ -443,3 +443,20 @@ DB 권한 회수는 `docs/STEP5_REVOKE_DIRECT_ACCESS.sql`을 검토한 뒤 Supab
 - 결과 파일: `xdr/web-injection/result.json`
 
 [AGENTS.md](AGENTS.md)의 공통 규칙을 계속 적용합니다. 실제 비밀번호·JWT·서버 전용 키·실제 이메일 값은 GitHub나 제출 묶음에 넣지 않습니다.
+
+
+## 보너스 xdr-03 — 알려진 취약점 악용 탐지
+
+- 원본 경보: `xdr/fixtures/known-cve.json` (수정하지 않음, 가상 Wazuh 경보 24건)
+- 읽기 모듈: `xdr/known-cve/read-alerts.mjs` — 시각·출발 주소·계정·규칙 수준·설명만 추출하고 비밀값처럼 보이는 문자열은 가림
+- 패턴 근거: CVE-2021-44228 형태의 JNDI 원격 조회 요청, MITRE ATT&CK T1190, 알려진 취약점 점검 흔적
+- 판정 모듈: `xdr/known-cve/decide.mjs` — import·파일 I/O·외부 호출 없이 `decide(alert)`만으로 block/alert/record 판단
+- 응답 연결: `xdr/known-cve/respond.mjs` — block 후보만 15분 만료·근거 경보 번호가 붙은 임시 deny 규칙으로 만들고 block/alert 알림은 `xdr/alerts.log`에 한 줄씩 추가
+- 기존 ZTNA 판정기: `src/decider.mjs`의 `device_registered`, `step_up_required`, `resource_scope` 규칙은 변경하지 않음
+- 읽기 확인: 경보 24건 / 출력 24줄
+- 실행 명령: `npm run xdr:run -- known-cve`
+- 실제 가상 경보 실행 결과: block 8 / alert 8 / record 8
+- 정상 이벤트 block: 0건
+- 결과 파일: `xdr/known-cve/result.json`
+- 저장점 커밋 메시지: `보너스 xdr-03 저장점`
+

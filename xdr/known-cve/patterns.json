@@ -1,0 +1,27 @@
+{
+  "vulnerability": {
+    "id": "CVE-2021-44228",
+    "name": "Apache Log4j2 JNDI 원격 조회 악용 형태"
+  },
+  "technique": {
+    "id": "T1190",
+    "name": "Exploit Public-Facing Application"
+  },
+  "patterns": [
+    {
+      "name": "jndi_remote_lookup_in_header",
+      "condition": "요청 머리글 값(data.useragent 등)에 ${jndi:<프로토콜>://...} 형태의 완전한 원격 조회 구문이 있음",
+      "evidence": "CVE-2021-44228은 공격자가 통제한 로그 메시지나 매개변수의 JNDI 관련 원격 엔드포인트가 해석되는 형태를 악용할 수 있다."
+    },
+    {
+      "name": "jndi_remote_lookup_in_argument",
+      "condition": "요청 주소·인자(data.url)에 ${jndi:<프로토콜>://...} 형태의 완전한 원격 조회 구문이 있음",
+      "evidence": "CVE-2021-44228은 공격자가 통제한 로그 메시지 매개변수에 포함된 JNDI 조회를 통해 원격 엔드포인트를 참조하는 형태와 관련된다."
+    },
+    {
+      "name": "known_cve_probe_trace",
+      "condition": "CVE 이름, jndi·lookup 단편, probe/class-check 같은 알려진 취약점 점검 흔적이 있으나 완전한 원격 조회 구문은 없거나 추가 확인이 필요함",
+      "evidence": "MITRE ATT&CK T1190은 인터넷에 공개된 애플리케이션의 알려진 약점을 찾아 악용하는 시도를 다루므로 점검·탐색 흔적은 차단보다 추가 확인 신호로 쓴다."
+    }
+  ]
+}
