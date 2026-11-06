@@ -120,6 +120,39 @@ export function createStudentView() {
         unknown: '확인 불가(unknown)',
       };
 
+      const finalSummary = document.createElement('section');
+      finalSummary.setAttribute('data-student-final-core', 'access-decision');
+      const finalTitle = document.createElement('h3');
+      finalTitle.textContent = '핵심 1 · 업무 앱 접속 판정';
+      const finalState = document.createElement('p');
+      const finalNext = document.createElement('p');
+      const decisionForSummary = data?.decision;
+      if (status === 'ok' && ['allow', 'deny', 'challenge', 'unknown'].includes(decisionForSummary)) {
+        const label = {
+          allow: '허용',
+          deny: '거부',
+          challenge: '추가 확인 필요',
+          unknown: '확인 불가',
+        }[decisionForSummary];
+        finalState.textContent = `요약: ${data?.appId || appId || '대상 앱 확인 불가'} · ${label} · 확인 시각 ${data?.checkedAt || '확인 불가'}`;
+        finalNext.textContent = decisionForSummary === 'challenge'
+          ? '다음 행동: 제공된 추가 확인 절차를 완료한 뒤 다시 판정을 요청하세요.'
+          : decisionForSummary === 'unknown'
+            ? '다음 행동: 확인 불가를 허용으로 간주하지 말고 연결 상태와 진단 정보를 확인하세요.'
+            : '다음 행동: 아래 판정 이유와 원래 상태 코드를 함께 확인하세요.';
+      } else if (status === 'error') {
+        finalState.textContent = '요약: 접속 판정 요청에 실패했습니다. 실패는 deny 판정이 아닙니다.';
+        finalNext.textContent = '다음 행동: 오류 내용을 확인한 뒤 사용자가 다시 요청하세요.';
+      } else if (status === 'loading') {
+        finalState.textContent = '요약: 접속 판정을 확인하는 중입니다.';
+        finalNext.textContent = '다음 행동: 이전 결과를 새 결과처럼 해석하지 말고 현재 요청이 끝날 때까지 기다리세요.';
+      } else {
+        finalState.textContent = '요약: 아직 업무 앱 접속 판정을 요청하지 않았습니다.';
+        finalNext.textContent = '다음 행동: 업무 앱을 고른 뒤 접속 요청을 실행하세요.';
+      }
+      finalSummary.append(finalTitle, finalState, finalNext);
+      root.append(finalSummary);
+
       if (status === 'idle') {
         appendText('p', '업무 앱을 골라 접속을 요청하세요.');
       } else if (status === 'loading') {
@@ -175,6 +208,13 @@ export function createStudentView() {
         unknown: '확인 불가(unknown)',
       };
 
+      const finalSummary = document.createElement('section');
+      finalSummary.setAttribute('data-student-final-core', 'security-evidence');
+      appendText(finalSummary, 'h3', '핵심 2 · 보안 기록과 이상 징후 근거');
+      const finalState = appendText(finalSummary, 'p', '요약: 보안 기록 상태를 확인하는 중입니다.');
+      const finalNext = appendText(finalSummary, 'p', '다음 행동: 기록의 종류·근거·규칙·상태를 함께 확인하세요.');
+      root.append(finalSummary);
+
       if (status === 'loading') {
         appendText(root, 'p', '보안 기록을 불러오는 중입니다.');
         if (modeText[mode]) appendText(root, 'p', `데이터 연결 상태: ${modeText[mode]}`);
@@ -182,6 +222,8 @@ export function createStudentView() {
       }
 
       if (status === 'error') {
+        finalState.textContent = '요약: 보안 기록을 확인하지 못했습니다. 기록 없음이나 안전 상태로 바꾸지 않습니다.';
+        finalNext.textContent = '다음 행동: 오류와 데이터 연결 상태를 확인한 뒤 사용자가 다시 불러오세요.';
         const contractMismatch = error?.code === 'CONTRACT_MISMATCH' || error?.code === 'ENGINE_RESULT_UNVERIFIED';
         appendText(
           root,
@@ -195,6 +237,8 @@ export function createStudentView() {
       }
 
       if (status !== 'ok') {
+        finalState.textContent = '요약: 보안 기록 상태를 확인할 수 없습니다.';
+        finalNext.textContent = '다음 행동: 확인 불가 상태를 정상으로 간주하지 말고 연결 상태를 확인하세요.';
         appendText(root, 'p', '보안 기록 상태를 확인할 수 없습니다.');
         if (modeText[mode]) appendText(root, 'p', `데이터 연결 상태: ${modeText[mode]}`);
         return root;
@@ -203,6 +247,12 @@ export function createStudentView() {
       const events = Array.isArray(data)
         ? [...data].sort((a, b) => Date.parse(b.at) - Date.parse(a.at))
         : [];
+      const xdrCount = events.filter((event) => event.kind === 'xdr').length;
+      const accessCount = events.filter((event) => event.kind === 'access').length;
+      finalState.textContent = `요약: 전체 ${events.length}건 · XDR 경보 ${xdrCount}건 · 접속 기록 ${accessCount}건`;
+      finalNext.textContent = events.length > 0
+        ? '다음 행동: 필터로 기록을 좁힌 뒤 상세에서 근거·규칙·세 상태를 확인하세요.'
+        : '다음 행동: 표시할 기록이 없다는 사실만 확인됐습니다. 안전하다는 뜻으로 해석하지 않습니다.';
 
       if (modeText[mode]) appendText(root, 'p', `데이터 연결 상태: ${modeText[mode]}`);
 
@@ -423,6 +473,27 @@ export function createStudentView() {
         disconnected: '연결 없음(disconnected)',
         unknown: '확인 불가(unknown)',
       };
+
+      const finalSummary = document.createElement('section');
+      finalSummary.setAttribute('data-student-final-core', 'device-session-diagnostics');
+      appendText(finalSummary, 'h3', '핵심 3 · 기기·연결·진단 상태');
+      const statusMode = modeLabels[mode] || '확인 불가(unknown)';
+      const notificationCount = Array.isArray(notifications) ? notifications.length : 0;
+      appendText(
+        finalSummary,
+        'p',
+        `요약: 데이터 연결 ${statusMode} · 기기 조회 ${devices?.status || '확인 불가'} · 세션 조회 ${sessions?.status || '확인 불가'} · 상태 알림 ${notificationCount}건`,
+      );
+      let nextAction = '다음 행동: 아래 기기·현재 연결·상태 알림·진단 정보를 순서대로 확인하세요.';
+      if (devices?.status === 'error' || sessions?.status === 'error' || diagnostics?.status === 'error') {
+        nextAction = '다음 행동: 실패한 항목을 정상으로 간주하지 말고 오류를 확인한 뒤 사용자가 다시 불러오세요.';
+      } else if (diagnostics?.status === 'idle') {
+        nextAction = '다음 행동: 제공 영역의 「도움정보 불러오기」를 눌러 비밀 없는 진단 근거를 확인하세요.';
+      } else if (mode === 'disconnected' || mode === 'unknown') {
+        nextAction = '다음 행동: 연결 없음·확인 불가 상태를 그대로 유지하고 진단 정보에서 원인을 확인하세요.';
+      }
+      appendText(finalSummary, 'p', nextAction);
+      root.append(finalSummary);
 
       const retryNotice = (parent) => {
         appendText(parent, 'p', '다시 시도는 위쪽 「다시 불러오기」 버튼을 사용자가 직접 누르세요. 자동으로 다시 요청하지 않습니다.');
