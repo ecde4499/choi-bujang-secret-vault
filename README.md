@@ -494,3 +494,20 @@ DB 권한 회수는 `docs/STEP5_REVOKE_DIRECT_ACCESS.sql`을 검토한 뒤 Supab
 - 결과 파일: `xdr/privilege/result.json`
 - 저장점 커밋 메시지: `보너스 xdr-05 저장점`
 
+
+## 보너스 xdr-06 — 자료 빼돌리기 탐지
+
+- 원본 경보: `xdr/fixtures/exfiltration.json` (수정하지 않음, 가상 Wazuh 경보 30건)
+- 읽기 모듈: `xdr/exfiltration/read-alerts.mjs` — 시각·출발 주소·계정·규칙 수준·설명만 추출하고 비밀값처럼 보이는 문자열은 가림
+- 패턴 근거: MITRE ATT&CK T1041(명령 통로로 유출), T1048(다른 프로토콜로 유출)
+- 주요 신호: 처음 보는 목적지로 대용량 전송, 업무/수업 시간 밖 압축 파일 반출, 반복 대용량 전송, 대량 파일·비정상 포트·명령 통로 전송
+- 판정 모듈: `xdr/exfiltration/decide.mjs` — import·파일 I/O·외부 호출 없이 `decide(alert)`만으로 block/alert/record 판단
+- 응답 연결: `xdr/exfiltration/respond.mjs` — 명확한 block 후보만 출발 주소+계정+목적지 기준 1시간 만료·근거 경보 번호가 붙은 임시 deny 규칙으로 만들고 block/alert 알림은 `xdr/alerts.log`에 한 줄씩 추가
+- 기존 ZTNA 판정기: `src/decider.mjs`의 `device_registered`, `step_up_required`, `resource_scope` 규칙은 변경하지 않음
+- 읽기 확인: 경보 30건 / 출력 30줄
+- 실행 명령: `npm run xdr:run -- exfiltration`
+- 실제 가상 경보 실행 결과: block 10 / alert 10 / record 10
+- 정상 이벤트 block: 0건
+- 결과 파일: `xdr/exfiltration/result.json`
+- 저장점 커밋 메시지: `보너스 xdr-06 저장점`
+
